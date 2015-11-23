@@ -1,43 +1,9 @@
-## Elm implementation of HTML5 Reader API
+# Elm HTML5 file upload control
 
-Takes the id of an `input` of `type="file"` and attempts to read the file associated with it by the user.
+Elm does not currently implement the [HTML5 file upload control](http://www.w3.org/TR/html-markup/input.file.html), which is implemented in browsers via `FileReader`.
 
-    getFileContents "upload"
+This package addresses that shortfall with a Native code library and Elm code exposing an Error Type and function that takes the `id` of an input control.
 
-Here is a full example of the code in use
-```
-type Action =
-      | Upload
-      | FileData String
+    getTextFile : String -> Task Error String
 
-update : Action -> Model -> (Model, Effects Action)
-update action model =
-    case action of
-        Upload -> ( model, loadData )
-        FileData str -> ( { model | data <- str }, Effects.none )
-        -- note that str may be the error message
-
--- VIEW
-
-view : Signal.Address Action -> Model -> Html
-view address model =
-    div []
-        [ input [ type' "file", id "input" ] []
-        , button [onClick address Upload] [ text <| "Upload" ]
-        , p [] [ text <| "Contents: " ++ model.data ]
-        ]
-
--- TASKS
-
-loadData : Effects Action
-loadData =
-    getTextFile "input" `Task.onError` (\err -> Task.succeed (errorMapper err))
-        |> Task.map FileData
-        |> Effects.task
-
-errorMapper : FileReader.Error -> String
-errorMapper err =
-    case err of
-        FileReader.ReadFail -> "File reading error"
-        FileReader.NoFileSpecified -> "No file specified"
-```
+See it in action in the `examples` directory.

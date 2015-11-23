@@ -2,7 +2,7 @@ module FileReader (Error(..), getTextFile) where
 {-| Elm bindings to HTML5 Reader API.
 
 # Read file as text string
-@docs getTextFile
+@docs Error, getTextFile
 
 -}
 
