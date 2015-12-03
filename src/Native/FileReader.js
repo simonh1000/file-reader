@@ -39,8 +39,59 @@ Elm.Native.FileReader.make = function(localRuntime){
             else callback(Task.fail({ctor : 'NoFileSpecified'}));
         });
     };
+    
+    // readAsArrayBuffer : Value -> Task error String
+    var readAsArrayBuffer = function(fileObjectToRead){
+        return Task.asyncFunction(function(callback){
+            var reader = new FileReader();
+
+            reader.onload = function(evt) {
+                return callback(Task.succeed(evt.target.result))
+            };
+
+            reader.onerror = function() {
+                return callback(Task.fail({ctor : 'ReadFail'}));
+            };
+
+            // specified field must be an <input type='file' ...>
+            // so it must exist and
+            // it must have a .files element
+            if (!fileObjectToRead || !(fileObjectToRead instanceof Blob)) {
+                return callback(Task.fail({ctor : 'NoValidBlob'}))
+            }
+
+            reader.readAsArrayBuffer(fileObjectToRead);            
+        });
+    };
+    
+    // readAsDataUrl : Value -> Task error String
+    var readAsDataUrl = function(fileObjectToRead){
+        return Task.asyncFunction(function(callback){
+            var reader = new FileReader();
+
+            reader.onload = function(evt) {
+                return callback(Task.succeed(evt.target.result))
+            };
+
+            reader.onerror = function() {
+                return callback(Task.fail({ctor : 'ReadFail'}));
+            };
+
+            // specified field must be an <input type='file' ...>
+            // so it must exist and
+            // it must have a .files element
+            if (!fileObjectToRead || !(fileObjectToRead instanceof Blob)) {
+                return callback(Task.fail({ctor : 'NoValidBlob'}))
+            }
+
+            reader.readAsDataURL(fileObjectToRead);            
+        });
+    };
+
 
     return {
-        getTextFile : getTextFile
+        getTextFile : getTextFile,
+        readAsArrayBuffer : readAsArrayBuffer,
+        readAsDataUrl: readAsDataUrl
     };
 };

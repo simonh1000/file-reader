@@ -1,4 +1,4 @@
-module FileReader (Error(..), getTextFile) where
+module FileReader (Error(..), getTextFile, readAsArrayBuffer, readAsDataUrl) where
 {-| Elm bindings to HTML5 Reader API.
 
 # Read file as text string
@@ -10,6 +10,7 @@ import Signal
 import Task exposing (Task)
 
 import Native.FileReader
+import Json.Decode exposing (Value)
 
 {-| FileReader can fail in one of three cases:
 
@@ -19,6 +20,7 @@ import Native.FileReader
 -}
 type Error
     = IdNotFound
+    | NoValidBlob
     | NoFileSpecified
     | ReadFail
 
@@ -29,3 +31,9 @@ to read the text file associated with it by the user.
 -}
 getTextFile : String -> Task Error String
 getTextFile = Native.FileReader.getTextFile
+
+readAsArrayBuffer : Value -> Task Error Value
+readAsArrayBuffer = Native.FileReader.readAsArrayBuffer
+
+readAsDataUrl : Value -> Task Error Value
+readAsDataUrl = Native.FileReader.readAsDataUrl
