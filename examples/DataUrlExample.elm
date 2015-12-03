@@ -5,7 +5,8 @@ import StartApp
 import Effects exposing (Effects)
 import Task
 import FileReader exposing (readAsDataUrl, Error(..))
-import Json.Decode as Json exposing (..)
+import Json.Decode exposing (..)
+import Json.Encode
 
 type alias ImageData = Value
 
@@ -30,13 +31,13 @@ type alias NativeFile =
 type Action = DragEnter
   | DragLeave
   | Drop (List NativeFile)
-  | LoadImageCompleted (Maybe Json.Value)
+  | LoadImageCompleted (Result FileReader.Error Json.Decode.Value)
 --  | LoadImageFailed FileReader.Error
 
 
 onDragFunction : String -> Signal.Address a -> a -> Html.Attribute
 onDragFunction nativeEventName address payload =
-  onWithOptions nativeEventName {stopPropagation = False, preventDefault = True} Json.value (\_ -> Signal.message address payload)
+  onWithOptions nativeEventName {stopPropagation = False, preventDefault = True} Json.Decode.value (\_ -> Signal.message address payload)
 
 onDragEnter : Signal.Address a -> a -> Html.Attribute
 onDragEnter = onDragFunction "dragenter"
@@ -47,21 +48,21 @@ onDragOver = onDragFunction "dragover"
 onDragLeave : Signal.Address a -> a -> Html.Attribute
 onDragLeave = onDragFunction "dragleave"
 
-parseFilenameAt : Int -> Json.Decoder NativeFile
-parseFilenameAt index = Json.at ["dataTransfer", "files"] <|
-  Json.object2 NativeFile ((toString index) := (Json.object1 identity ("name" := Json.string))) (toString index := Json.value)
+parseFilenameAt : Int -> Json.Decode.Decoder NativeFile
+parseFilenameAt index = Json.Decode.at ["dataTransfer", "files"] <|
+  Json.Decode.object2 NativeFile ((toString index) := (Json.Decode.object1 identity ("name" := Json.Decode.string))) (toString index := Json.Decode.value)
 
-parseFilenames : Int -> Json.Decoder (List NativeFile)
+parseFilenames : Int -> Json.Decode.Decoder (List NativeFile)
 parseFilenames count =
  case count of
     0 ->
       succeed []
     _ ->
-      Json.object2 (::) (parseFilenameAt (count - 1)) (parseFilenames (count - 1))
+      Json.Decode.object2 (::) (parseFilenameAt (count - 1)) (parseFilenames (count - 1))
   
-parseLength : Json.Decoder Int
-parseLength = Json.at ["dataTransfer", "files"] <| oneOf 
-  [ Json.object1 identity ("length" := Json.int)
+parseLength : Json.Decode.Decoder Int
+parseLength = Json.Decode.at ["dataTransfer", "files"] <| oneOf 
+  [ Json.Decode.object1 identity ("length" := Json.Decode.int)
   , null 0 
   ]
 
@@ -74,7 +75,9 @@ update action model =
       DragEnter -> ({model | hoverState = Hovering}, Effects.none)
       DragLeave -> ({model | hoverState = Normal}, Effects.none)
       Drop files -> ( {model | hoverState = Normal}, loadFirstFile files loadData)
-      LoadImageCompleted val -> ( {model | imageData = val}, Effects.none )
+      LoadImageCompleted result -> case result of
+        Result.Err err -> ( {model | imageLoadError = Just err}, Effects.none )
+        Result.Ok val -> ( {model | imageData = Just val}, Effects.none )
 
 -- VIEW
 
@@ -88,7 +91,7 @@ view address model =
       , onDragOver address DragEnter
       , onDrop address
     ]
-    [ text "Drop stuff here"
+    [ renderImageOrPrompt model
     ]
 
 renderImageOrPrompt : Model -> Html
@@ -97,7 +100,9 @@ renderImageOrPrompt model =
     Just err -> text (errorMapper err)
     Nothing -> case model.imageData of
       Nothing -> text "Drop stuff here"
-      Just result -> img [property "src" result] []
+      Just result -> img [ property "src" result
+        , property "max-width" (Json.Encode.string "100%")] 
+        []
 
 countStyle : HoverState -> Html.Attribute
 countStyle dragState =
@@ -112,15 +117,17 @@ countStyle dragState =
     ]
 
 -- TASKS
+wrapInResult : Json.Decode.Value -> Result FileReader.Error Json.Decode.Value
+wrapInResult val = Result.Ok val 
 
-loadData : Json.Value -> Effects Action
+loadData : Json.Decode.Value -> Effects Action
 loadData file =
     readAsDataUrl file
-        |> Task.toMaybe     
-        |> Task.map LoadImageCompleted
+        |> Task.toResult
+        |> Task.map LoadImageCompleted        
         |> Effects.task
 
-loadFirstFile : List NativeFile -> (Json.Value -> Effects Action) -> Effects Action
+loadFirstFile : List NativeFile -> (Json.Decode.Value -> Effects Action) -> Effects Action
 loadFirstFile files loader = 
   let
     maybeHead = List.head <| List.map .blob files
