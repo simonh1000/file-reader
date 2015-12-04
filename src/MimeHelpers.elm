@@ -10,30 +10,35 @@ module MimeHelpers
 
 import String
 
-type MimeImage = Jpeg
+type MimeImage 
+  = Jpeg
   | Png
   | Gif
   | OtherImage
 
-type MimeAudio = Mp3
+type MimeAudio 
+  = Mp3
   | Ogg
   | Wav
   | OtherAudio
 
-type MimeVideo = Mp4
+type MimeVideo 
+  = Mp4
   | Mpeg
   | Quicktime
   | Avi
   | Webm
   | OtherVideo
 
-type MimeText = PlainText
+type MimeText 
+  = PlainText
   | Html
   | Css
   | Xml
   | OtherText
 
-type MimeType = Image MimeImage
+type MimeType = 
+  Image MimeImage
   | Audio MimeAudio
   | Video MimeVideo
   | Text MimeText  
