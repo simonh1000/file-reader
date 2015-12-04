@@ -11,26 +11,26 @@ import Json.Encode
 -- Model types
 type alias ImageData = Value
 
-type HoverState = 
-  Normal
+type HoverState
+  = Normal
   | Hovering
 
-type alias Model = 
+type alias Model =
   { hoverState : HoverState -- set to Hovering if the user is hovering with content over the drop zone
   , imageData: Maybe (ImageData) -- the image data once it has been loaded
   , imageLoadError : Maybe (FileReader.Error) -- the Error in case loading failed
-  } 
+  }
 
 init : Model
 init = Model Normal Nothing Nothing
- 
--- Helper type for the File JS object that is used when the user drops files into the DropZone with DnD 
+
+-- Helper type for the File JS object that is used when the user drops files into the DropZone with DnD
 type alias NativeFile =
   { name : String
-  , blob : Value    
+  , blob : Value
   }
 
-type Action = DragEnter -- user enters the drop zone while dragging someting
+type Action = DragEnter -- user enters the drop zone while dragging something
   | DragLeave -- user leaves drop zone
   | Drop (List NativeFile) -- drop of a number of files
   | LoadImageCompleted (Result FileReader.Error Json.Decode.Value) -- the loading of the file contents is complete
@@ -38,7 +38,11 @@ type Action = DragEnter -- user enters the drop zone while dragging someting
 -- DnD handlers
 onDragFunction : String -> Signal.Address a -> a -> Html.Attribute
 onDragFunction nativeEventName address payload =
-  onWithOptions nativeEventName {stopPropagation = False, preventDefault = True} Json.Decode.value (\_ -> Signal.message address payload)
+  onWithOptions
+    nativeEventName
+    {stopPropagation = False, preventDefault = True}
+    Json.Decode.value
+    (\_ -> Signal.message address payload)
 
 onDragEnter : Signal.Address a -> a -> Html.Attribute
 onDragEnter = onDragFunction "dragenter"
@@ -50,28 +54,33 @@ onDragLeave : Signal.Address a -> a -> Html.Attribute
 onDragLeave = onDragFunction "dragleave"
 
 -- Json decoders for the somewhat weird drop eventdata structure
+-- Int ????
 parseFilenameAt : Int -> Json.Decode.Decoder NativeFile
-parseFilenameAt index = Json.Decode.at ["dataTransfer", "files"] <|
-  Json.Decode.object2 NativeFile ((toString index) := (Json.Decode.object1 identity ("name" := Json.Decode.string))) (toString index := Json.Decode.value)
+parseFilenameAt index =
+    Json.Decode.at ["dataTransfer", "files"] <|
+      Json.Decode.object2
+        NativeFile
+        ((toString index) := (Json.Decode.object1 identity ("name" := Json.Decode.string)))
+        (toString index := Json.Decode.value)
 
 parseFilenames : Int -> Json.Decode.Decoder (List NativeFile)
 parseFilenames count =
- case count of
-    0 ->
-      succeed []
-    _ ->
-      Json.Decode.object2 (::) (parseFilenameAt (count - 1)) (parseFilenames (count - 1))
-  
+    case count of
+        0 ->
+          succeed []
+        _ ->
+          Json.Decode.object2 (::) (parseFilenameAt (count - 1)) (parseFilenames (count - 1))
+
 parseLength : Json.Decode.Decoder Int
-parseLength = Json.Decode.at ["dataTransfer", "files"] <| oneOf 
+parseLength = Json.Decode.at ["dataTransfer", "files"] <| oneOf
   [ Json.Decode.object1 identity ("length" := Json.Decode.int)
-  , null 0 
+  , null 0
   ]
 
 onDrop : Signal.Address Action -> Html.Attribute
 onDrop address = onWithOptions "drop" {stopPropagation = True, preventDefault = True} (parseLength `andThen` parseFilenames) (\vals -> Signal.message address (Drop vals))
 
-
+-- UPDATE
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
@@ -87,7 +96,7 @@ update action model =
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-    div 
+    div
     [
       countStyle model.hoverState
       , onDragEnter address DragEnter
@@ -99,13 +108,13 @@ view address model =
     ]
 
 renderImageOrPrompt : Model -> Html
-renderImageOrPrompt model = 
+renderImageOrPrompt model =
   case model.imageLoadError of
     Just err -> text (errorMapper err)
     Nothing -> case model.imageData of
       Nothing -> text "Drop stuff here"
       Just result -> img [ property "src" result
-        , property "max-width" (Json.Encode.string "100%")] 
+        , property "max-width" (Json.Encode.string "100%")]
         []
 
 countStyle : HoverState -> Html.Attribute
@@ -130,7 +139,7 @@ loadData file =
 
 -- small helper method to do nothing if 0 files were dropped, otherwise load the first file
 loadFirstFile : List NativeFile -> (Json.Decode.Value -> Effects Action) -> Effects Action
-loadFirstFile files loader = 
+loadFirstFile files loader =
   let
     maybeHead = List.head <| List.map .blob files
   in

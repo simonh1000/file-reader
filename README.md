@@ -7,3 +7,7 @@ This package addresses that shortfall with a Native code library and Elm code ex
     getTextFile : String -> Task Error String
 
 See it in action in the `examples` directory.
+
+
+
+FileReader.readAsBinaryString() is deprecated
