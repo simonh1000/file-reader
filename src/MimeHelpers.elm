@@ -1,4 +1,10 @@
-module MimeHelpers (MimeImage, MimeAudio, MimeVideo, MimeText, MimeType, parseMimeType) where
+module MimeHelpers 
+  ( MimeImage
+  , MimeAudio
+  , MimeVideo
+  , MimeText
+  , MimeType
+  , parseMimeType) where
 -- This is an incomplete, somewhat arbitrary mapping of the most common browser mime types to custom types. 
 -- See https://code.google.com/p/chromium/codesearch#chromium/src/net/base/mime_util.cc&l=201 for a full list of Mime types 
 
