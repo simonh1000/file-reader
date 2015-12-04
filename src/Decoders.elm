@@ -6,22 +6,30 @@ module Decoders (..) where
 
 import FileReader exposing (FileRef)
 import Json.Decode exposing (..)
+import MimeHelpers
 
 -- Helper type for the File JS object that is used when the user drops files into the DropZone with DnD
 type alias NativeFile =
   { name : String
-  , blob : FileRef
+  , size : Int
+  , mimeType : Maybe MimeHelpers.MimeType 
+  , blob : Value    
   }
 
 
--- Json decoders for the somewhat weird drop eventdata structure
+-- Json decoders for the somewhat weird drop eventdata structure. the .dataTransfer.files property is a JS FileList object which is not an array so cannot
+-- be parsed with Json.Decode.array, but has to be accessed in the form .dataTransfer.files[index]. This hopefully explains the strange (toString index) 
+-- way to get a file at an index 
 parseFilenameAt : Int -> Json.Decode.Decoder NativeFile
-parseFilenameAt index =
-    Json.Decode.at ["dataTransfer", "files"] <|
-      Json.Decode.object2
-        NativeFile
-        ((toString index) := (Json.Decode.object1 identity ("name" := Json.Decode.string)))
-        (toString index := Json.Decode.value)
+parseFilenameAt index = 
+  Json.Decode.at ["dataTransfer", "files"] <|
+    Json.Decode.object4 
+      NativeFile 
+      ((toString index) := (Json.Decode.object1 identity ("name" := Json.Decode.string))) -- name
+      ((toString index) := (Json.Decode.object1 identity ("size" := Json.Decode.int))) -- size
+      ((toString index) := (Json.Decode.object1 MimeHelpers.parseMimeType ("type" := Json.Decode.string))) -- mime type that is parsed as string and then converted to a MimeType        
+      (toString index := Json.Decode.value) -- the whole JS File object as a Json.Value so we can pass it to a library that reads the content with a native FileReader 
+
 
 parseFilenames : Int -> Json.Decode.Decoder (List NativeFile)
 parseFilenames count =
