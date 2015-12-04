@@ -15,6 +15,17 @@ Elm.Native.FileReader.make = function(localRuntime){
     // getTextFile : String -> Task error String
     var getTextFile = function(id){
         var inputId = document.getElementById(id);
+        // specified field must be an <input type='file' ...>
+        // so it must exist and
+        // it must have a .files element
+        // if (!inputId || typeof inputId.files != 'object') {
+        //     return callback(Task.fail({ctor : 'IdNotFound'}))
+        // }
+        //
+        // var fileUpload = inputId.files[0];
+        // if (fileUpload)
+        //     reader.readAsText(fileUpload);
+        // else callback(Task.fail({ctor : 'NoFileSpecified'}));
         return readAsTextFile(inputId.files[0]);
     };
 

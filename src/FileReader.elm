@@ -1,4 +1,13 @@
-module FileReader (Error(..), getTextFile, readAsTextFile, readAsArrayBuffer, readAsDataUrl) where
+module FileReader
+    ( FileRef
+    , Error(..)
+    , getTextFile
+    , readAsTextFile
+    , readAsArrayBuffer
+    , readAsDataUrl
+    , toString
+    ) where
+
 {-| Elm bindings to HTML5 Reader API.
 
 # Read file as text string
@@ -12,6 +21,7 @@ import Task exposing (Task)
 import Native.FileReader
 import Json.Decode exposing (Value)
 
+type alias FileRef = Value
 {-| FileReader can fail in one of four cases:
 
  - the Id specified in getTextFile does not match an input of type file in the document
@@ -34,7 +44,11 @@ getTextFile : String -> Task Error String
 getTextFile = Native.FileReader.getTextFile
 
 
-readAsTextFile : Value -> Task Error String
+{-| TBD.
+
+    readAsTextFile val
+-}
+readAsTextFile : FileRef -> Task Error String
 readAsTextFile = Native.FileReader.readAsTextFile
 
 {-| Takes a "File" or "Blob" JS object as a Json.Value

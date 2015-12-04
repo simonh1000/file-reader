@@ -1,15 +1,16 @@
 {-
-Original code from Daniel Bachler (danyx23)
+Based on original code from Daniel Bachler (danyx23)
 -}
 
 module Decoders (..) where
 
+import FileReader exposing (FileRef)
 import Json.Decode exposing (..)
 
 -- Helper type for the File JS object that is used when the user drops files into the DropZone with DnD
 type alias NativeFile =
   { name : String
-  , blob : Value
+  , blob : FileRef
   }
 
 
@@ -39,11 +40,7 @@ parseLength =
             ]
 
 -- returns file name
-parseSelectFile : Decoder Value
+parseSelectFile : Decoder FileRef
 parseSelectFile =
     at [ "target", "files" ] <|
         ((toString 0) := value)
--- parseSelectEvent : Decoder String
--- parseSelectEvent =
---     at [ "target", "files" ] <|
---         ((toString 0) := ("name" := string))
