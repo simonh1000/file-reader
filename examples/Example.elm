@@ -46,6 +46,7 @@ errorMapper err =
         FileReader.ReadFail -> "File reading error"
         FileReader.NoFileSpecified -> "No file specified"
         FileReader.IdNotFound -> "Id Not Found"
+        FileReader.NoValidBlob -> "Give Blob was not valid"
 
 -- ----------------------------------
 app =
