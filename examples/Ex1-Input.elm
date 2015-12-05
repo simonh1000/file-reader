@@ -1,7 +1,7 @@
 
 import Html exposing (Html, div, input, button, h1, p, text, form)
 import Html.Attributes exposing (type', id, style, multiple)
-import Html.Events exposing (onClick, on, onSubmit)
+import Html.Events exposing (onClick, on, onSubmit, onWithOptions)
 import StartApp
 import Effects exposing (Effects)
 import Task
@@ -32,7 +32,7 @@ type Action
     = Upload String                             -- independent button
     | FilesSelect Files
     | FilesSelectUpload Files
-    -- | Submit String
+    | Submit String
     | FileData (Result FileReader.Error String) --
     -- | UploadSelected NativeFile
 
@@ -54,12 +54,13 @@ update action model =
         FilesSelectUpload fileInstances ->
             ( { model | selected = fileInstances }
             , Effects.batch <|
-                List.map (loadData' << .blob) fileInstances
+                List.map (loadData' << .blob) model.selected
             )
-        -- Submit s ->
-        --     ( { model | result = toString model.selected }
-        --     , Effects.none
-        --     )
+        Submit _ ->
+            ( { model | result = toString model.selected }
+            , Effects.batch <|
+                List.map (loadData' << .blob) model.selected
+            )
 
         FileData (Result.Ok str) ->
             ( { model | contents = str :: model.contents }
@@ -86,30 +87,30 @@ view address model =
                 [ onClick address (Upload "input0") ]
                 [ text "Upload" ]
             ]
-        , div []
-            [ h1
-                [] [ text "Multi Select with automatic upload" ]
-            , input
-                [ type' "file"
-                , onchange' address FilesSelectUpload
-                , multiple True
-                ] []
-            ]
-        -- , form
-        --     [ id "form0"
-        --     , onSubmit address (Submit "form0")
-        --     ]
+        -- , div []
         --     [ h1
-        --         [] [ text "Form, multi and button" ]
+        --         [] [ text "Multi Select with automatic upload" ]
         --     , input
         --         [ type' "file"
+        --         , onchange' address FilesSelectUpload
         --         , multiple True
-        --         , onchange' address SelectedFiles
         --         ] []
-        --     , button
-        --         [ type' "submit"
-        --         ] [ text "Submit" ]
         --     ]
+        , form
+            [ id "form0"
+            , onsubmit address (Submit "form0")
+            ]
+            [ h1
+                [] [ text "Form, multi and button" ]
+            , input
+                [ type' "file"
+                , onchange' address FilesSelect
+                , multiple True
+                ] []
+            , button
+                [ type' "submit"
+                ] [ text "Submit" ]
+            ]
         , div []
             [ h1 [] [ text "Results" ]
             , p [] [ text <| "Selected files:" ++ List.foldl (++) "" (List.map .name model.selected) ]
@@ -128,8 +129,14 @@ onchange' address action =
     on
         "change"
         parseSelectedFiles                      -- Decode Value
-        -- (parseLength' `andThen` parseFilenames')
         (\v -> Signal.message address (action v))
+
+onsubmit address action =  -- onSubmit but with preventDefault
+    onWithOptions
+        "submit"
+        {stopPropagation = False, preventDefault = True}
+        Json.value
+        (\_ -> Signal.message address action)
 
 containerStyles =
     style

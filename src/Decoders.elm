@@ -66,11 +66,7 @@ nativeFile =
 
 pp : Int -> Decoder (List NativeFile)
 pp count =
-    case count of
-        0 ->
-            succeed []
-        _ ->
-            object2 (::) (fileAt (count - 1)) (pp (count - 1))
+    List.foldl (\e acc -> Json.object2 (::) (fileAt e) acc) (succeed []) [0..(count-1)]
 
 -- returns first file
 parseSelectedFile : Decoder NativeFile
@@ -98,11 +94,3 @@ parseDroppedFiles =
 --     at ["dataTransfer"] parseFiles
     -- at ["dataTransfer", "files"] <|
     --     map (List.map snd) <| keyValuePairs nativeFile
-
--- parseFiles : Decoder (List NativeFile)
--- parseFiles =
---     (at [ "target" ] filesLength)
---     `andThen`
---     (\i -> at ["target"] (parseSelectedFiles i))
---         -- map (List.map snd) <| keyValuePairs nativeFile
---
