@@ -8,6 +8,7 @@ import Task
 import Json.Decode as Json exposing (Value, andThen)
 
 import FileReader exposing (FileRef, readAsTextFile, Error(..))
+import MimeHelpers exposing (MimeType(..))
 import DragDrop exposing (Action(Drop))
 import Decoders exposing (..)
 
@@ -22,10 +23,9 @@ init =
     , dropZone = DragDrop.init dropZoneDefault dropZoneHover
     }
 
-type Action
+type Action 
     = DnD DragDrop.Action
     | FileData (Result FileReader.Error String)
-
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
@@ -35,8 +35,8 @@ update action model =
                 | dropZone = fst <| DragDrop.update (Drop lst) model.dropZone
                }
             , case List.head lst of
-                Just nativeFile ->
-                    loadData nativeFile.blob
+                Just nativeFile -> 
+                    loadIfIsTextFile nativeFile                    
                 Nothing -> Effects.none
             )
         DnD a ->                -- drag events
@@ -84,6 +84,14 @@ dropZoneHover =
         ]
 
 -- TASKS
+loadIfIsTextFile: NativeFile -> Effects Action
+loadIfIsTextFile nativeFile =
+  case nativeFile.mimeType of
+    Just mimeType -> 
+      case mimeType of 
+        MimeHelpers.Text text -> loadData nativeFile.blob
+        _ -> Effects.none
+    Nothing -> Effects.none
 
 loadData : FileRef -> Effects Action
 loadData fileValue =
