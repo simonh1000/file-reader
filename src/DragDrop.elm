@@ -2,7 +2,7 @@
 Based on original code from Daniel Bachler (danyx23)
 -}
 
-module DragDrop2 
+module DragDrop 
   ( HoverState(..)
   , Action(Drop)
   , init
