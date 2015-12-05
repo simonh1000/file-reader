@@ -35,18 +35,21 @@ type Action =
 update : Action -> Model -> (Model, Effects Action)
 update action model =
     case action of
+      -- Case drop. Let the DnD library update it's model and emmit the loading effect
       DnD (Drop files) ->
         ( { model 
           | dnDModel = DragDrop2.update (Drop files) model.dnDModel        
           }
           , loadFirstFile files
         )
+      -- Other DnD cases. Let the DnD library update it's model.
       DnD a ->
         ( { model
           | dnDModel = DragDrop2.update a model.dnDModel          
           }
           , Effects.none
         )
+      -- The loading effect has emmited the LoadImageCompleted action, check the result and update the model
       LoadImageCompleted result -> case result of
         Result.Err err -> 
           ( { model 
@@ -98,7 +101,7 @@ renderImageOrPrompt model =
             text "Gimmie!"
       Just result -> 
         img [ property "src" result
-          , property "max-width" (Json.Encode.string "100%")]
+          , style [("max-width", "100%")]]
           []
 
 countStyle : DragDrop2.HoverState -> Html.Attribute
@@ -124,16 +127,17 @@ loadFirstFile =
 
 loadData : FileRef -> Effects Action
 loadData file =
-    FileReader.readAsDataUrl file   -- will return a Task FileReader.Error Json.Value
-        |> Task.toResult -- gets turned into a Task Never (Result FileReader.Error Json.Value)
-        |> Task.map LoadImageCompleted -- (turned into the LoadImageCompleted Action with the Result as a payload)
-        |> Effects.task -- return as Effects Action
+    FileReader.readAsDataUrl file      -- will return a Task FileReader.Error Json.Value
+        |> Task.toResult               -- gets turned into a Task Never (Result FileReader.Error Json.Value)
+        |> Task.map LoadImageCompleted -- gets turned into the LoadImageCompleted Action with the Result as a payload
+        |> Effects.task                -- return as Effects Action
 
 -- small helper method to do nothing if 0 files were dropped, otherwise load the first file
 loadFirstFileWithLoader : (FileRef -> Effects Action) -> List NativeFile -> Effects Action
 loadFirstFileWithLoader loader files =
   let
-    maybeHead = List.head <| List.map .blob (List.filter dropAllowedForFile files) 
+    maybeHead = List.head <| List.map .blob 
+                              (List.filter dropAllowedForFile files) 
   in
     case maybeHead of
       Nothing -> Effects.none
