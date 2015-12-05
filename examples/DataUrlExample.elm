@@ -37,13 +37,13 @@ update action model =
     case action of
       DnD (Drop files) ->
         ( { model
-          | dnDModel = DragDrop2.update dropAllowedFilter (Drop files) model.dnDModel        
+          | dnDModel = DragDrop2.update dropAllowedFilter (Drop (Debug.log "drag" files)) model.dnDModel        
           }
           , loadFirstFile files
         )
       DnD a ->
         ( { model
-          | dnDModel = DragDrop2.update dropAllowedFilter a model.dnDModel          
+          | dnDModel = DragDrop2.update dropAllowedFilter (Debug.log "drag" a) model.dnDModel          
           }
           , Effects.none
         )
@@ -65,8 +65,7 @@ update action model =
 
 dropAllowedFilter : List NativeFile -> Bool
 dropAllowedFilter files =
-  True
-  --List.any dropAllowedForFile files
+  List.any dropAllowedForFile files
       
 dropAllowedForFile : NativeFile -> Bool
 dropAllowedForFile file =
@@ -133,7 +132,7 @@ loadFirstFile =
 
 loadData : FileRef -> Effects Action
 loadData file =
-    FileReader.readAsDataUrl (Debug.log "file" file)   -- will return a Task FileReader.Error Json.Value
+    FileReader.readAsDataUrl file   -- will return a Task FileReader.Error Json.Value
         |> Task.toResult -- gets turned into a Task Never (Result FileReader.Error Json.Value)
         |> Task.map LoadImageCompleted -- (turned into the LoadImageCompleted Action with the Result as a payload)
         |> Effects.task -- return as Effects Action
@@ -142,9 +141,9 @@ loadData file =
 loadFirstFileWithLoader : (FileRef -> Effects Action) -> List NativeFile -> Effects Action
 loadFirstFileWithLoader loader files =
   let
-    maybeHead = List.head <| List.map .blob files
+    maybeHead = List.head <| List.map .blob (List.filter dropAllowedForFile files) 
   in
-    case (Debug.log "head" maybeHead) of
+    case maybeHead of
       Nothing -> Effects.none
       Just file -> loader file
 
