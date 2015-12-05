@@ -50,8 +50,8 @@ update action model =
             )
         Drop vals ->
             ( { model
-                | message = toString vals
-                , hoverState = Normal
+                | hoverState = Normal
+                -- , message = toString vals
               }
             , Effects.none
             )
@@ -91,7 +91,8 @@ onDrop address =
     onWithOptions
         "drop"
         {stopPropagation = True, preventDefault = True}
-        (parseLength `andThen` parseFilenames)
+        -- (parseLength `andThen` parseFilenames)
+        parseDroppedFiles
         (\vals -> Signal.message address (Drop vals))
 
 -- View Styles

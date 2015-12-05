@@ -11,22 +11,28 @@ import Json.Decode as Json exposing (Value, andThen)
 import FileReader exposing (getTextFile, readAsTextFile, Error(..))
 import Decoders exposing (..)
 
+type alias Files =
+    List NativeFile
+    -- List (String, NativeFile)
+
 type alias Model =
     { result : String
-    , selected : List NativeFile
+    , selected : Files
+    , contents : List String
     }
 
 init : Model
 init =
     { result = ""
     , selected = []
+    , contents = []
     }
 
 type Action
     = Upload String                             -- independent button
-    | FilesSelect (List NativeFile)
-    | FilesSelectUpload (List NativeFile)
-    | Submit String
+    | FilesSelect Files
+    | FilesSelectUpload Files
+    -- | Submit String
     | FileData (Result FileReader.Error String) --
     -- | UploadSelected NativeFile
 
@@ -47,23 +53,21 @@ update action model =
             )
         FilesSelectUpload fileInstances ->
             ( { model | selected = fileInstances }
-            , case List.head fileInstances of
-                Just file -> loadData' file.blob
-                Nothing -> Effects.none
+            , Effects.batch <|
+                List.map (loadData' << .blob) fileInstances
             )
-        Submit s ->
-            ( { model | result = toString model.selected }
-            , Effects.none
-            )
+        -- Submit s ->
+        --     ( { model | result = toString model.selected }
+        --     , Effects.none
+        --     )
 
         FileData (Result.Ok str) ->
-            ( { model | result = toString str }
+            ( { model | contents = str :: model.contents }
             , Effects.none )
 
         FileData (Result.Err err) ->
             ( { model | result = FileReader.toString err }
             , Effects.none )
-
 
 -- VIEW
 
@@ -72,12 +76,11 @@ view address model =
     div [ containerStyles ]
         [ div []
             [ h1
-                [] [ text "Select and Upload separate" ]
+                [] [ text "Single file select + Upload separate" ]
             , input
                 [ type' "file"
                 , id "input0"
                 , onchange address FilesSelect
-                , multiple True
                 ] []
             , button
                 [ onClick address (Upload "input0") ]
@@ -85,11 +88,11 @@ view address model =
             ]
         , div []
             [ h1
-                [] [ text "Select with automatic upload" ]
+                [] [ text "Multi Select with automatic upload" ]
             , input
                 [ type' "file"
-                , id "input1"
-                , onchange address FilesSelectUpload
+                , onchange' address FilesSelectUpload
+                , multiple True
                 ] []
             ]
         -- , form
@@ -108,23 +111,25 @@ view address model =
         --         ] [ text "Submit" ]
         --     ]
         , div []
-            -- [ p [] [ text <| "Selected files: " ++ toString model.selected ]
-            [ p [] [ text <| "Selected files:" ++ List.foldl (++) "" (List.map .name model.selected) ]
-            , p [] [ text <| "File contents: " ++ model.result ]
+            [ h1 [] [ text "Results" ]
+            , p [] [ text <| "Selected files:" ++ List.foldl (++) "" (List.map .name model.selected) ]
+            -- [ p [] [ text <| "Selected files:" ++ List.foldl (++) "" (List.map (.name << snd) model.selected) ]
+            , p [] [ text <| "File contents: " ++ toString model.contents ]
             ]
         ]
 
 onchange address action =
     on
         "change"
-        parseSelectFile                      -- Decode Value
+        parseSelectedFile                      -- Decode Value
         (\v -> Signal.message address (action [v]))
 
--- onchange' address action =
---     on
---         "change"
---         parseSelectFiles                      -- Decode Value
---         (\v -> Signal.message address (action v))
+onchange' address action =
+    on
+        "change"
+        parseSelectedFiles                      -- Decode Value
+        -- (parseLength' `andThen` parseFilenames')
+        (\v -> Signal.message address (action v))
 
 containerStyles =
     style

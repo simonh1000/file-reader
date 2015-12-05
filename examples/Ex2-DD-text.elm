@@ -14,16 +14,18 @@ import Decoders exposing (..)
 -- MODEL
 
 type alias Model =
-    { result : String
+    { message : String
     , dropZone : DragDrop.Model
     , files : List NativeFile
+    , contents : List String
     }
 
 init : Model
 init =
-    { result = "Waiting..."
+    { message = "Waiting..."
     , dropZone = DragDrop.init dropZoneDefault dropZoneHover
     , files = []
+    , contents = []
     }
 
 -- UPDATE
@@ -37,13 +39,11 @@ update action model =
     case action of
         DnD (Drop lst) ->
             ( { model
-                | dropZone = fst <| DragDrop.update (Drop lst) model.dropZone
+                | dropZone = fst <| DragDrop.update (Drop lst) model.dropZone   -- reset HoverState
                 , files = lst
                }
-            , case List.head lst of
-                Just nativeFile ->
-                    loadData nativeFile.blob
-                Nothing -> Effects.none
+            , Effects.batch <|
+                List.map (loadData << .blob) lst
             )
         DnD a ->                -- drag events
             let
@@ -55,11 +55,11 @@ update action model =
                 )
 
         FileData (Result.Ok str) ->
-            ( { model | result = toString str }
+            ( { model | contents = str :: model.contents }
             , Effects.none )
 
         FileData (Result.Err err) ->
-            ( { model | result = FileReader.toString err }
+            ( { model | message = FileReader.toString err }
             , Effects.none )
 
 -- VIEW
@@ -69,7 +69,11 @@ view address model =
     div [ containerStyles ]
         [ h1 [] [ text "Drag 'n Drop" ]
         , DragDrop.view (Signal.forwardTo address DnD) model.dropZone
-        , p [] [ text <| List.foldl (++) "" <| List.intersperse ", " <| List.map .name model.files ]
+        , p [] [ text <| "files " ++
+                (List.foldl (++) "" <| List.intersperse ", " <| List.map .name model.files) ]
+        , div
+            [] <|
+            List.map text model.contents
         ]
 
 containerStyles =
