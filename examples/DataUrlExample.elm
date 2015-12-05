@@ -37,13 +37,13 @@ update action model =
     case action of
       DnD (Drop files) ->
         ( { model
-          | dnDModel = DragDrop2.update dropAllowedFilter (Drop (Debug.log "drag" files)) model.dnDModel        
+          | dnDModel = DragDrop2.update dropAllowedFilter (Drop files) model.dnDModel        
           }
           , loadFirstFile files
         )
       DnD a ->
         ( { model
-          | dnDModel = DragDrop2.update dropAllowedFilter (Debug.log "drag" a) model.dnDModel          
+          | dnDModel = DragDrop2.update dropAllowedFilter a model.dnDModel          
           }
           , Effects.none
         )
@@ -65,7 +65,9 @@ update action model =
 
 dropAllowedFilter : List NativeFile -> Bool
 dropAllowedFilter files =
-  List.any dropAllowedForFile files
+  True
+  -- doesn't work ATM:
+  -- List.any dropAllowedForFile files
       
 dropAllowedForFile : NativeFile -> Bool
 dropAllowedForFile file =
