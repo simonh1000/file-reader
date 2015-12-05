@@ -3,17 +3,16 @@ module FileReader
     , FileContentArrayBuffer
     , FileContentDataUrl
     , Error(..)
-    , getTextFile
     , readAsTextFile
     , readAsArrayBuffer
     , readAsDataUrl
-    , toString    
+    , toString
     ) where
 
 {-| Elm bindings to HTML5 Reader API.
 
 # Read file as text string
-@docs Error, getTextFile, readAsArrayBuffer, readAsDataUrl
+@docs Error, readAsTextFile, readAsArrayBuffer, readAsDataUrl
 
 -}
 
@@ -34,18 +33,18 @@ type alias FileContentDataUrl = Value
  - the contents of the file cannot be read.
 -}
 type Error
-    = IdNotFound
-    | NoValidBlob
-    | NoFileSpecified
+    = NoValidBlob
     | ReadFail
+    -- | IdNotFound
+    -- | NoFileSpecified
 
 {-| Takes the id of an `input` of `type="file"` and attempts
 to read the text file associated with it by the user.
 
     getTextFile "upload"
 -}
-getTextFile : String -> Task Error String
-getTextFile = Native.FileReader.getTextFile
+-- getTextFile : String -> Task Error String
+-- getTextFile = Native.FileReader.getTextFile
 
 
 {-| TBD.
@@ -81,6 +80,6 @@ toString : Error -> String
 toString err =
     case err of
         ReadFail -> "File reading error"
-        NoFileSpecified -> "No file specified"
-        IdNotFound -> "Id Not Found"
         NoValidBlob -> "Blob was not valid"
+        -- IdNotFound -> "Id Not Found"
+        -- NoFileSpecified -> "No file specified"
