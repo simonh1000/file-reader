@@ -12,24 +12,18 @@ import MimeHelpers
 type alias NativeFile =
   { name : String
   , size : Int
-  , mimeType : Maybe MimeHelpers.MimeType 
-  , blob : Value    
+  , mimeType : Maybe MimeHelpers.MimeType
+  , blob : Value
   }
 
 
 -- Json decoders for the somewhat weird drop eventdata structure. the .dataTransfer.files property is a JS FileList object which is not an array so cannot
--- be parsed with Json.Decode.array, but has to be accessed in the form .dataTransfer.files[index]. This hopefully explains the strange (toString index) 
--- way to get a file at an index 
+-- be parsed with Json.Decode.array, but has to be accessed in the form .dataTransfer.files[index]. This hopefully explains the strange (toString index)
+-- way to get a file at an index
 parseFilenameAt : Int -> Json.Decode.Decoder NativeFile
-parseFilenameAt index = 
+parseFilenameAt index =
   Json.Decode.at ["dataTransfer", "files"] <|
-    Json.Decode.object4 
-      NativeFile 
-      ((toString index) := (Json.Decode.object1 identity ("name" := Json.Decode.string))) -- name
-      ((toString index) := (Json.Decode.object1 identity ("size" := Json.Decode.int))) -- size
-      ((toString index) := (Json.Decode.object1 MimeHelpers.parseMimeType ("type" := Json.Decode.string))) -- mime type that is parsed as string and then converted to a MimeType        
-      (toString index := Json.Decode.value) -- the whole JS File object as a Json.Value so we can pass it to a library that reads the content with a native FileReader 
-
+    (toString index) := nativeFile
 
 parseFilenames : Int -> Json.Decode.Decoder (List NativeFile)
 parseFilenames count =
@@ -47,8 +41,30 @@ parseLength =
             , null 0
             ]
 
--- returns file name
-parseSelectFile : Decoder FileRef
+nativeFile : Decoder NativeFile
+nativeFile =
+    Json.Decode.object4
+        NativeFile
+            (Json.Decode.object1 identity ("name" := Json.Decode.string)) -- name
+            (Json.Decode.object1 identity ("size" := Json.Decode.int)) -- size
+            (Json.Decode.object1 MimeHelpers.parseMimeType ("type" := Json.Decode.string)) -- mime type that is parsed as string and then converted to a MimeType
+            Json.Decode.value -- the whole JS File object as a Json.Value so we can pass it to a library that reads the content with a native FileReader
+
+-- returns first file
+parseSelectFile : Decoder NativeFile
 parseSelectFile =
-    at [ "target", "files" ] <|
-        ((toString 0) := value)
+    at
+        [ "target", "files" ]
+        ((toString 0) := nativeFile)
+        -- ((toString 0) := value)
+
+-- NOT WORKING!!
+parseDroppedFiles : Json.Decode.Decoder (List NativeFile)
+parseDroppedFiles =
+    Json.Decode.at ["dataTransfer", "files"]
+        (list nativeFile)
+
+parseSelectFiles : Decoder (List NativeFile)
+parseSelectFiles =
+    at [ "target", "files" ]
+        (list nativeFile)
