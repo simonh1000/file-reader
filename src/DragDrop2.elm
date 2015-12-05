@@ -83,7 +83,7 @@ onDragEnter address =
 
 onDragOver : Signal.Address Action -> Attribute
 onDragOver address = 
-  onDragFunctionDecodeFiles "dragenter" (\files -> DragEnter files) address 
+  onDragFunctionDecodeFiles "dragover" (\files -> DragEnter files) address 
 
 onDragLeave : Signal.Address a -> a -> Attribute
 onDragLeave = 
