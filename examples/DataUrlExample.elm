@@ -39,7 +39,7 @@ update action model =
         ( { model
           | dnDModel = DragDrop2.update dropAllowedFilter (Drop files) model.dnDModel        
           }
-          , loadFirstFile files loadData
+          , loadFirstFile files
         )
       DnD a ->
         ( { model
@@ -127,20 +127,24 @@ countStyle dragState =
     ]
 
 -- TASKS
+loadFirstFile : List NativeFile -> Effects Action
+loadFirstFile =
+  loadFirstFileWithLoader loadData
+
 loadData : FileRef -> Effects Action
 loadData file =
-    FileReader.readAsDataUrl file   -- will return a Task FileReader.Error Json.Value
+    FileReader.readAsDataUrl (Debug.log "file" file)   -- will return a Task FileReader.Error Json.Value
         |> Task.toResult -- gets turned into a Task Never (Result FileReader.Error Json.Value)
         |> Task.map LoadImageCompleted -- (turned into the LoadImageCompleted Action with the Result as a payload)
         |> Effects.task -- return as Effects Action
 
 -- small helper method to do nothing if 0 files were dropped, otherwise load the first file
-loadFirstFile : List NativeFile -> (FileRef -> Effects Action) -> Effects Action
-loadFirstFile files loader =
+loadFirstFileWithLoader : (FileRef -> Effects Action) -> List NativeFile -> Effects Action
+loadFirstFileWithLoader loader files =
   let
-    maybeHead = List.head <| List.map .blob (List.filter dropAllowedForFile files)
+    maybeHead = List.head <| List.map .blob files
   in
-    case maybeHead of
+    case (Debug.log "head" maybeHead) of
       Nothing -> Effects.none
       Just file -> loader file
 
