@@ -36,14 +36,14 @@ update : Action -> Model -> (Model, Effects Action)
 update action model =
     case action of
       DnD (Drop files) ->
-        ( { model
-          | dnDModel = DragDrop2.update dropAllowedFilter (Drop files) model.dnDModel        
+        ( { model 
+          | dnDModel = DragDrop2.update (Drop files) model.dnDModel        
           }
           , loadFirstFile files
         )
       DnD a ->
         ( { model
-          | dnDModel = DragDrop2.update dropAllowedFilter a model.dnDModel          
+          | dnDModel = DragDrop2.update a model.dnDModel          
           }
           , Effects.none
         )
@@ -62,13 +62,7 @@ update action model =
           )
 
 -- VIEW
-
-dropAllowedFilter : List NativeFile -> Bool
-dropAllowedFilter files =
-  True
-  -- doesn't work ATM:
-  -- List.any dropAllowedForFile files
-      
+     
 dropAllowedForFile : NativeFile -> Bool
 dropAllowedForFile file =
   case file.mimeType of
@@ -100,10 +94,8 @@ renderImageOrPrompt model =
         case model.dnDModel of
           Normal ->
             text "Drop stuff here"
-          HoveringOk ->
+          Hovering ->
             text "Gimmie!"
-          HoveringRejected ->
-            text "I don't like files of this type"
       Just result -> 
         img [ property "src" result
           , property "max-width" (Json.Encode.string "100%")]
@@ -119,10 +111,8 @@ countStyle dragState =
     , ("height", "200px")
     , ("text-align", "center")
     , ("background", case dragState of
-                        DragDrop2.HoveringOk -> 
+                        DragDrop2.Hovering -> 
                             "#ffff99"
-                        DragDrop2.HoveringRejected -> 
-                            "#ff3333"
                         DragDrop2.Normal -> 
                             "#cccc99")
     ]

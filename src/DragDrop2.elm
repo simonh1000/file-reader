@@ -23,8 +23,7 @@ import Decoders exposing (..)
 
 type HoverState
     = Normal
-    | HoveringOk
-    | HoveringRejected
+    | Hovering
 
 type alias Model = HoverState -- set to Hovering if the user is hovering with content over the drop zone    
 
@@ -34,18 +33,15 @@ init = Normal
 -- UPDATE
 
 type Action
-    = DragEnter (List NativeFile) -- user enters the drop zone while dragging something
+    = DragEnter -- user enters the drop zone while dragging something
     | DragLeave -- user leaves drop zone
     | Drop (List NativeFile)
 
-update : (List NativeFile -> Bool) -> Action -> Model -> Model
-update dropAllowedFilter action model =
+update : Action -> Model -> Model
+update action model =
     case action of
-        DragEnter files ->
-            if (dropAllowedFilter files) then 
-              HoveringOk
-            else
-              HoveringRejected
+        DragEnter ->
+            Hovering            
         DragLeave ->
             Normal            
         Drop files ->
@@ -54,9 +50,9 @@ update dropAllowedFilter action model =
 -- View event handlers
 dragDropEventHandlers : Signal.Address Action -> List Attribute
 dragDropEventHandlers address =
-    [ onDragEnter address
+    [ onDragEnter address DragEnter
     , onDragLeave address DragLeave
-    , onDragOver address
+    , onDragOver address DragEnter
     , onDrop address
     ]
 
@@ -77,13 +73,13 @@ onDragFunctionDecodeFiles nativeEventName actionCreator address =
         (parseLength `andThen` parseFilenames)
         (\vals -> Signal.message address (actionCreator vals))
 
-onDragEnter : Signal.Address Action -> Attribute
-onDragEnter address = 
-  onDragFunctionDecodeFiles "dragenter" (\files -> DragEnter files) address 
+onDragEnter : Signal.Address a -> a -> Attribute
+onDragEnter = 
+  onDragFunctionIgnoreFiles "dragenter"
 
-onDragOver : Signal.Address Action -> Attribute
-onDragOver address = 
-  onDragFunctionDecodeFiles "dragover" (\files -> DragEnter files) address 
+onDragOver : Signal.Address a -> a -> Attribute
+onDragOver = 
+  onDragFunctionIgnoreFiles "dragover"
 
 onDragLeave : Signal.Address a -> a -> Attribute
 onDragLeave = 
