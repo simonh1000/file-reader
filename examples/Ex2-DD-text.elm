@@ -8,14 +8,15 @@ import Task
 import Json.Decode as Json exposing (Value, andThen)
 
 import FileReader exposing (FileRef, readAsTextFile, Error(..))
-import DragDrop exposing (Action(Drop))
+import DragDrop exposing (Action(Drop), dragDropEventHandlers)
 import Decoders exposing (..)
+import MimeHelpers exposing (MimeType(Text))
 
 -- MODEL
 
 type alias Model =
     { message : String
-    , dropZone : DragDrop.Model
+    , dropZone : DragDrop.HoverState
     , files : List NativeFile
     , contents : List String
     }
@@ -23,7 +24,7 @@ type alias Model =
 init : Model
 init =
     { message = "Waiting..."
-    , dropZone = DragDrop.init dropZoneDefault dropZoneHover
+    , dropZone = DragDrop.init
     , files = []
     , contents = []
     }
@@ -37,21 +38,21 @@ type Action
 update : Action -> Model -> (Model, Effects Action)
 update action model =
     case action of
-        DnD (Drop lst) ->
+        DnD (Drop files) ->
             ( { model
-                | dropZone = fst <| DragDrop.update (Drop lst) model.dropZone   -- reset HoverState
-                , files = lst
+                | dropZone = DragDrop.update (Drop files) model.dropZone   -- reset HoverState
+                , files = files
                }
             , Effects.batch <|
-                List.map (loadData << .blob) lst
+                List.map (loadData << .blob) files
             )
         DnD a ->                -- drag events
             let
-                (newModel, newEffects) =
+                newModel =
                     DragDrop.update a model.dropZone
             in
                 ( { model | dropZone = newModel }
-                , Effects.map DnD newEffects
+                , Effects.none
                 )
 
         FileData (Result.Ok str) ->
@@ -68,13 +69,30 @@ view : Signal.Address Action -> Model -> Html
 view address model =
     div [ containerStyles ]
         [ h1 [] [ text "Drag 'n Drop" ]
-        , DragDrop.view (Signal.forwardTo address DnD) model.dropZone
+        , renderDropZone address model.dropZone
         , p [] [ text <| "files " ++
                 (List.foldl (++) "" <| List.intersperse ", " <| List.map .name model.files) ]
         , div
             [] <|
             List.map text model.contents
         ]
+
+renderDropZone : Signal.Address Action -> DragDrop.HoverState -> Html
+renderDropZone address hoverState =
+  div
+    (renderZoneAttributes address hoverState)
+    []
+
+renderZoneAttributes : Signal.Address Action -> DragDrop.HoverState -> List Html.Attribute
+renderZoneAttributes address hoverState = 
+  (case hoverState of
+        DragDrop.Normal ->
+          dropZoneDefault
+        DragDrop.Hovering ->
+          dropZoneHover
+  )
+  :: 
+  dragDropEventHandlers (Signal.forwardTo address DnD)  
 
 containerStyles =
     style
@@ -94,6 +112,19 @@ dropZoneHover =
         ]
 
 -- TASKS
+
+-- helper method not yet used
+isTextFile: NativeFile -> Bool
+isTextFile nativeFile =
+  case nativeFile.mimeType of
+    Just mimeType -> 
+      case mimeType of 
+        MimeHelpers.Text text -> 
+          True
+        _ -> 
+          False
+    Nothing -> 
+      False
 
 loadData : FileRef -> Effects Action
 loadData fileValue =
