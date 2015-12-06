@@ -9,10 +9,10 @@ import Json.Encode
 
 import Json.Decode as Json exposing (Value, andThen)
 
-import FileReader exposing (FileRef, FileContentDataUrl, readAsTextFile, Error(..))
+import FileReader exposing (..)
 import MimeHelpers exposing (MimeType(..))
 import DragDrop exposing (Action(Drop), dragDropEventHandlers, HoverState(..))
-import Decoders exposing (..)
+-- import Decoders exposing (..)
 
 
 -- Model types
@@ -24,10 +24,10 @@ type alias Model =
   }
 
 init : Model
-init = 
+init =
   Model DragDrop.init Nothing Nothing
 
-type Action = 
+type Action =
   DnD DragDrop.Action
   | LoadImageCompleted (Result FileReader.Error FileContentDataUrl) -- the loading of the file contents is complete
 
@@ -38,42 +38,42 @@ update action model =
     case action of
       -- Case drop. Let the DnD library update it's model and emmit the loading effect
       DnD (Drop files) ->
-        ( { model 
-          | dnDModel = DragDrop.update (Drop files) model.dnDModel        
+        ( { model
+          | dnDModel = DragDrop.update (Drop files) model.dnDModel
           }
           , loadFirstFile files
         )
       -- Other DnD cases. Let the DnD library update it's model.
       DnD a ->
         ( { model
-          | dnDModel = DragDrop.update a model.dnDModel          
+          | dnDModel = DragDrop.update a model.dnDModel
           }
           , Effects.none
         )
       -- The loading effect has emmited the LoadImageCompleted action, check the result and update the model
       LoadImageCompleted result -> case result of
-        Result.Err err -> 
-          ( { model 
+        Result.Err err ->
+          ( { model
             | imageLoadError = Just err
             }
-            , Effects.none 
+            , Effects.none
           )
-        Result.Ok val -> 
-          ( { model 
+        Result.Ok val ->
+          ( { model
             | imageData = Just val
             }
-            , Effects.none 
+            , Effects.none
           )
 
 -- VIEW
-     
+
 dropAllowedForFile : NativeFile -> Bool
 dropAllowedForFile file =
   case file.mimeType of
     Nothing ->
-      False   
-    Just mimeType -> 
-      case mimeType of 
+      False
+    Just mimeType ->
+      case mimeType of
         MimeHelpers.Image _ ->
             True
         _ ->
@@ -82,17 +82,17 @@ dropAllowedForFile file =
 view : Signal.Address Action -> Model -> Html
 view address model =
     div
-    (  countStyle model.dnDModel 
-    :: dragDropEventHandlers (Signal.forwardTo address DnD))    
+    (  countStyle model.dnDModel
+    :: dragDropEventHandlers (Signal.forwardTo address DnD))
     [ renderImageOrPrompt model
     ]
 
 renderImageOrPrompt : Model -> Html
 renderImageOrPrompt model =
   case model.imageLoadError of
-    Just err -> 
+    Just err ->
       text (FileReader.toString err)
-    Nothing -> 
+    Nothing ->
       case model.imageData of
       Nothing ->
         case model.dnDModel of
@@ -100,7 +100,7 @@ renderImageOrPrompt model =
             text "Drop stuff here"
           Hovering ->
             text "Gimmie!"
-      Just result -> 
+      Just result ->
         img [ property "src" result
           , style [("max-width", "100%")]]
           []
@@ -115,9 +115,9 @@ countStyle dragState =
     , ("height", "200px")
     , ("text-align", "center")
     , ("background", case dragState of
-                        DragDrop.Hovering -> 
+                        DragDrop.Hovering ->
                             "#ffff99"
-                        DragDrop.Normal -> 
+                        DragDrop.Normal ->
                             "#cccc99")
     ]
 
@@ -137,8 +137,8 @@ loadData file =
 loadFirstFileWithLoader : (FileRef -> Effects Action) -> List NativeFile -> Effects Action
 loadFirstFileWithLoader loader files =
   let
-    maybeHead = List.head <| List.map .blob 
-                              (List.filter dropAllowedForFile files) 
+    maybeHead = List.head <| List.map .blob
+                              (List.filter dropAllowedForFile files)
   in
     case maybeHead of
       Nothing -> Effects.none
