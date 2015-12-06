@@ -2,7 +2,7 @@
 Based on original code from Daniel Bachler (danyx23)
 -}
 
-module DragDrop 
+module DragDrop
   ( HoverState(..)
   , Action(Drop)
   , init
@@ -17,7 +17,7 @@ import Html.Events exposing (onWithOptions)
 import Json.Decode as Json exposing (andThen)
 import Effects exposing (Effects)
 
-import Decoders exposing (..)
+import FileReader exposing (..)
 
 -- MODEL
 
@@ -25,7 +25,7 @@ type HoverState
     = Normal
     | Hovering
 
-type alias Model = HoverState -- set to Hovering if the user is hovering with content over the drop zone    
+type alias Model = HoverState -- set to Hovering if the user is hovering with content over the drop zone
 
 init : Model
 init = Normal
@@ -41,9 +41,9 @@ update : Action -> Model -> Model
 update action model =
     case action of
         DragEnter ->
-            Hovering            
+            Hovering
         DragLeave ->
-            Normal            
+            Normal
         Drop files ->
             Normal
 
@@ -70,23 +70,22 @@ onDragFunctionDecodeFiles nativeEventName actionCreator address =
     onWithOptions
         nativeEventName
         {stopPropagation = True, preventDefault = True}
-        (parseLength `andThen` parseFilenames)
+        -- (parseLength `andThen` parseFilenames)
+        parseDroppedFiles
         (\vals -> Signal.message address (actionCreator vals))
 
 onDragEnter : Signal.Address a -> a -> Attribute
-onDragEnter = 
+onDragEnter =
   onDragFunctionIgnoreFiles "dragenter"
 
 onDragOver : Signal.Address a -> a -> Attribute
-onDragOver = 
+onDragOver =
   onDragFunctionIgnoreFiles "dragover"
 
 onDragLeave : Signal.Address a -> a -> Attribute
-onDragLeave = 
+onDragLeave =
   onDragFunctionIgnoreFiles "dragleave"
 
 onDrop : Signal.Address Action -> Html.Attribute
 onDrop address =
-  onDragFunctionDecodeFiles "drop" (\files -> Drop files) address 
-
-
+  onDragFunctionDecodeFiles "drop" (\files -> Drop files) address
