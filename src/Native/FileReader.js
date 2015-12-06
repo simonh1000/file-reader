@@ -25,7 +25,7 @@ Elm.Native.FileReader.make = function(localRuntime){
             };
 
             if (!fileObjectToRead || !(fileObjectToRead instanceof Blob)) {
-                return callback(Task.fail({ctor : 'NoValidBlob'}))
+                return callback(Task.fail({ctor : 'NoValidBlob'}));
             }
 
             reader[method](fileObjectToRead);
