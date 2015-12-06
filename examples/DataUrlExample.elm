@@ -11,23 +11,24 @@ import Json.Decode as Json exposing (Value, andThen)
 
 import FileReader exposing (FileRef, FileContentDataUrl, readAsTextFile, Error(..))
 import MimeHelpers exposing (MimeType(..))
-import DragDrop2 exposing (Action(Drop), dragDropEventHandlers, HoverState(..))
+import DragDrop exposing (Action(Drop), dragDropEventHandlers, HoverState(..))
 import Decoders exposing (..)
 
 
 -- Model types
 
 type alias Model =
-  { dnDModel: DragDrop2.HoverState
+  { dnDModel: DragDrop.HoverState
   , imageData: Maybe (FileContentDataUrl) -- the image data once it has been loaded
   , imageLoadError : Maybe (FileReader.Error) -- the Error in case loading failed
   }
 
 init : Model
-init = Model DragDrop2.init Nothing Nothing
+init = 
+  Model DragDrop.init Nothing Nothing
 
 type Action = 
-  DnD DragDrop2.Action
+  DnD DragDrop.Action
   | LoadImageCompleted (Result FileReader.Error FileContentDataUrl) -- the loading of the file contents is complete
 
 -- UPDATE
@@ -38,14 +39,14 @@ update action model =
       -- Case drop. Let the DnD library update it's model and emmit the loading effect
       DnD (Drop files) ->
         ( { model 
-          | dnDModel = DragDrop2.update (Drop files) model.dnDModel        
+          | dnDModel = DragDrop.update (Drop files) model.dnDModel        
           }
           , loadFirstFile files
         )
       -- Other DnD cases. Let the DnD library update it's model.
       DnD a ->
         ( { model
-          | dnDModel = DragDrop2.update a model.dnDModel          
+          | dnDModel = DragDrop.update a model.dnDModel          
           }
           , Effects.none
         )
@@ -104,7 +105,7 @@ renderImageOrPrompt model =
           , style [("max-width", "100%")]]
           []
 
-countStyle : DragDrop2.HoverState -> Html.Attribute
+countStyle : DragDrop.HoverState -> Html.Attribute
 countStyle dragState =
   style
     [ ("font-size", "20px")
@@ -114,9 +115,9 @@ countStyle dragState =
     , ("height", "200px")
     , ("text-align", "center")
     , ("background", case dragState of
-                        DragDrop2.Hovering -> 
+                        DragDrop.Hovering -> 
                             "#ffff99"
-                        DragDrop2.Normal -> 
+                        DragDrop.Normal -> 
                             "#cccc99")
     ]
 
