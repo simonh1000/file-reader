@@ -37,6 +37,7 @@ type MimeText
   | Html
   | Css
   | Xml
+  | Json
   | OtherText
 
 type MimeType =
@@ -65,6 +66,7 @@ parseMimeType mimeString =
     "text/html" -> Just <| Text Html
     "text/css" -> Just <| Text Css
     "text/xml" -> Just <| Text Xml
+    "application/json" -> Just <| Text Json
     lowerCaseMimeString ->
       if (String.startsWith "image" lowerCaseMimeString) then
         Just <| Image OtherImage
