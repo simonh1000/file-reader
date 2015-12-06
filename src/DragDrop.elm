@@ -2,7 +2,13 @@
 Based on original code from Daniel Bachler (danyx23)
 -}
 
-module DragDrop (Model, Action(Drop), init, update, view) where
+module DragDrop 
+  ( HoverState(..)
+  , Action(Drop)
+  , init
+  , update
+  , dragDropEventHandlers
+  ) where
 
 import Html exposing (Html, Attribute, div, text)
 -- import Html.Attributes exposing (..)
@@ -19,16 +25,10 @@ type HoverState
     = Normal
     | Hovering
 
-type alias Model =
-    { hoverState : HoverState -- set to Hovering if the user is hovering with content over the drop zone
-    , message : String
-    , defaultStyle : Attribute
-    , hoverStyle : Attribute
-    -- , files : List NativeFile    -- Do we need to store this in the library??
-    }
+type alias Model = HoverState -- set to Hovering if the user is hovering with content over the drop zone    
 
-init : Attribute -> Attribute -> Model
-init = Model Normal ""
+init : Model
+init = Normal
 
 -- UPDATE
 
@@ -37,67 +37,56 @@ type Action
     | DragLeave -- user leaves drop zone
     | Drop (List NativeFile)
 
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> Model
 update action model =
     case action of
         DragEnter ->
-            ( { model | hoverState = Hovering }
-            , Effects.none
-            )
+            Hovering            
         DragLeave ->
-            ( { model | hoverState = Normal }
-            , Effects.none
-            )
-        Drop vals ->
-            ( { model
-                | hoverState = Normal
-                -- , message = toString vals
-              }
-            , Effects.none
-            )
-
--- VIEW
-
-view : Signal.Address Action -> Model -> Html
-view address model =
-    div
-        [ dropZoneStyle model
-        , onDragEnter address DragEnter
-        , onDragLeave address DragLeave
-        , onDragOver address DragEnter
-        , onDrop address
-        ] [ text model.message ]
+            Normal            
+        Drop files ->
+            Normal
 
 -- View event handlers
-onDragFunction : String -> Signal.Address a -> a -> Attribute
-onDragFunction nativeEventName address payload =
+dragDropEventHandlers : Signal.Address Action -> List Attribute
+dragDropEventHandlers address =
+    [ onDragEnter address DragEnter
+    , onDragLeave address DragLeave
+    , onDragOver address DragEnter
+    , onDrop address
+    ]
+
+-- Individual handler functions
+onDragFunctionIgnoreFiles : String -> Signal.Address a -> a -> Attribute
+onDragFunctionIgnoreFiles nativeEventName address action =
     onWithOptions
         nativeEventName
         {stopPropagation = False, preventDefault = True}
         Json.value
-        (\_ -> Signal.message address payload)
+        (\_ -> Signal.message address action)
+
+onDragFunctionDecodeFiles : String -> (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute
+onDragFunctionDecodeFiles nativeEventName actionCreator address =
+    onWithOptions
+        nativeEventName
+        {stopPropagation = True, preventDefault = True}
+        (parseLength `andThen` parseFilenames)
+        (\vals -> Signal.message address (actionCreator vals))
 
 onDragEnter : Signal.Address a -> a -> Attribute
-onDragEnter = onDragFunction "dragenter"
+onDragEnter = 
+  onDragFunctionIgnoreFiles "dragenter"
 
 onDragOver : Signal.Address a -> a -> Attribute
-onDragOver = onDragFunction "dragover"
+onDragOver = 
+  onDragFunctionIgnoreFiles "dragover"
 
 onDragLeave : Signal.Address a -> a -> Attribute
-onDragLeave = onDragFunction "dragleave"
+onDragLeave = 
+  onDragFunctionIgnoreFiles "dragleave"
 
 onDrop : Signal.Address Action -> Html.Attribute
 onDrop address =
-    onWithOptions
-        "drop"
-        {stopPropagation = True, preventDefault = True}
-        -- (parseLength `andThen` parseFilenames)
-        parseDroppedFiles
-        (\vals -> Signal.message address (Drop vals))
+  onDragFunctionDecodeFiles "drop" (\files -> Drop files) address 
 
--- View Styles
-dropZoneStyle : Model -> Attribute
-dropZoneStyle model =
-    if model.hoverState == Normal
-        then model.defaultStyle
-        else model.hoverStyle
+
