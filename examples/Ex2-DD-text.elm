@@ -7,9 +7,9 @@ import Task
 
 import Json.Decode as Json exposing (Value, andThen)
 
-import FileReader exposing (FileRef, readAsTextFile, Error(..))
+import FileReader exposing (FileRef, NativeFile, readAsTextFile, Error(..))
 import DragDrop exposing (Action(Drop), dragDropEventHandlers)
-import Decoders exposing (..)
+-- import Decoders exposing (..)
 import MimeHelpers exposing (MimeType(Text))
 
 -- MODEL
@@ -40,28 +40,26 @@ update action model =
     case action of
         DnD (Drop files) ->
             ( { model
-                | dropZone = DragDrop.update (Drop files) model.dropZone   -- reset HoverState
-                , files = files
-               }
+              | dropZone = DragDrop.update (Drop files) model.dropZone   -- reset HoverState
+              , files = files
+              }
             , Effects.batch <|
-                List.map (loadData << .blob) files
+                List.map (readTextFile << .blob) files
             )
         DnD a ->                -- drag events
-            let
-                newModel =
-                    DragDrop.update a model.dropZone
-            in
-                ( { model | dropZone = newModel }
-                , Effects.none
-                )
+            ( { model | dropZone = DragDrop.update a model.dropZone }
+            , Effects.none
+            )
 
         FileData (Result.Ok str) ->
             ( { model | contents = str :: model.contents }
-            , Effects.none )
+            , Effects.none
+            )
 
         FileData (Result.Err err) ->
             ( { model | message = FileReader.toString err }
-            , Effects.none )
+            , Effects.none
+            )
 
 -- VIEW
 
@@ -70,12 +68,20 @@ view address model =
     div [ containerStyles ]
         [ h1 [] [ text "Drag 'n Drop" ]
         , renderDropZone address model.dropZone
-        , p [] [ text <| "files " ++
-                (List.foldl (++) "" <| List.intersperse ", " <| List.map .name model.files) ]
+        , div
+            []
+            [ text <| "Files: " ++ commaSeperate (List.map .name model.files)
+            ]
         , div
             [] <|
-            List.map text model.contents
+            -- List.map text model.contents
+            [ text <| "Content: " ++ commaSeperate model.contents ]
+        , p [] [ text model.message ]
         ]
+
+commaSeperate : List String -> String
+commaSeperate lst =
+    List.foldl (++) "" (List.intersperse ", " lst)
 
 renderDropZone : Signal.Address Action -> DragDrop.HoverState -> Html
 renderDropZone address hoverState =
@@ -84,15 +90,15 @@ renderDropZone address hoverState =
     []
 
 renderZoneAttributes : Signal.Address Action -> DragDrop.HoverState -> List Html.Attribute
-renderZoneAttributes address hoverState = 
+renderZoneAttributes address hoverState =
   (case hoverState of
         DragDrop.Normal ->
           dropZoneDefault
         DragDrop.Hovering ->
           dropZoneHover
   )
-  :: 
-  dragDropEventHandlers (Signal.forwardTo address DnD)  
+  ::
+  dragDropEventHandlers (Signal.forwardTo address DnD)
 
 containerStyles =
     style
@@ -117,17 +123,17 @@ dropZoneHover =
 isTextFile: NativeFile -> Bool
 isTextFile nativeFile =
   case nativeFile.mimeType of
-    Just mimeType -> 
-      case mimeType of 
-        MimeHelpers.Text text -> 
+    Just mimeType ->
+      case mimeType of
+        MimeHelpers.Text text ->
           True
-        _ -> 
+        _ ->
           False
-    Nothing -> 
+    Nothing ->
       False
 
-loadData : FileRef -> Effects Action
-loadData fileValue =
+readTextFile : FileRef -> Effects Action
+readTextFile fileValue =
     readAsTextFile fileValue
         |> Task.toResult
         |> Task.map FileData

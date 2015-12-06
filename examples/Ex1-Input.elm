@@ -8,58 +8,57 @@ import Task
 
 import Json.Decode as Json exposing (Value, andThen)
 
-import FileReader exposing (getTextFile, readAsTextFile, Error(..))
-import Decoders exposing (..)
+import FileReader exposing (..)
+-- import Decoders exposing (..)
 
 type alias Files =
     List NativeFile
-    -- List (String, NativeFile)
 
 type alias Model =
-    { result : String
+    { message : String
     , selected : Files
     , contents : List String
     }
 
 init : Model
 init =
-    { result = ""
+    { message = "Waiting..."
     , selected = []
     , contents = []
     }
 
 type Action
-    = Upload String                             -- independent button
-    | FilesSelect Files
-    | FilesSelectUpload Files
-    | Submit String
-    | FileData (Result FileReader.Error String) --
-    -- | UploadSelected NativeFile
+    = Upload                                    -- independent button
+    | FilesSelect Files                         -- Update model, but without file read
+    | FilesSelectUpload Files                   -- Update model and read files
+    | Submit String                             -- Submit button in form
+    | FileData (Result FileReader.Error String) -- data returned
 
 update : Action -> Model -> (Model, Effects Action)
 update action model =
     case action of
-        Upload inputId ->
+        Upload ->
             ( model
-            , loadData inputId
+            , Effects.batch <|
+                List.map (readTextFile << .blob) model.selected
             )
 
         FilesSelect fileInstances ->
             ( { model
                 | selected = fileInstances
-                , result = "Something selected"
+                , message = "Something selected"
                }
             , Effects.none
             )
         FilesSelectUpload fileInstances ->
             ( { model | selected = fileInstances }
             , Effects.batch <|
-                List.map (loadData' << .blob) model.selected
+                List.map (readTextFile << .blob) fileInstances
             )
         Submit _ ->
-            ( { model | result = toString model.selected }
+            ( { model | message = Basics.toString model.selected }
             , Effects.batch <|
-                List.map (loadData' << .blob) model.selected
+                List.map (readTextFile << .blob) model.selected
             )
 
         FileData (Result.Ok str) ->
@@ -67,7 +66,7 @@ update action model =
             , Effects.none )
 
         FileData (Result.Err err) ->
-            ( { model | result = FileReader.toString err }
+            ( { model | message = FileReader.toString err }
             , Effects.none )
 
 -- VIEW
@@ -84,18 +83,18 @@ view address model =
                 , onchange address FilesSelect
                 ] []
             , button
-                [ onClick address (Upload "input0") ]
+                [ onClick address Upload ]
                 [ text "Upload" ]
             ]
-        -- , div []
-        --     [ h1
-        --         [] [ text "Multi Select with automatic upload" ]
-        --     , input
-        --         [ type' "file"
-        --         , onchange' address FilesSelectUpload
-        --         , multiple True
-        --         ] []
-        --     ]
+        , div []
+            [ h1
+                [] [ text "Multi Select with automatic upload" ]
+            , input
+                [ type' "file"
+                , onchange address FilesSelectUpload
+                , multiple True
+                ] []
+            ]
         , form
             [ id "form0"
             , onsubmit address (Submit "form0")
@@ -104,31 +103,35 @@ view address model =
                 [] [ text "Form, multi and button" ]
             , input
                 [ type' "file"
-                , onchange' address FilesSelect
+                , onchange address FilesSelect
                 , multiple True
                 ] []
             , button
-                [ type' "submit"
-                ] [ text "Submit" ]
+                [ type' "submit" ]
+                [ text "Submit" ]
             ]
         , div []
-            [ h1 [] [ text "Results" ]
-            , p [] [ text <| "Selected files:" ++ List.foldl (++) "" (List.map .name model.selected) ]
-            -- [ p [] [ text <| "Selected files:" ++ List.foldl (++) "" (List.map (.name << snd) model.selected) ]
-            , p [] [ text <| "File contents: " ++ toString model.contents ]
+            [ h1 []
+                [ text "Results" ]
+            , p []
+                [ text <|
+                    "Files: " ++ commaSeperate (List.map .name model.selected)
+                ]
+            , p []
+                [ text <| "Contents: " ++ commaSeperate model.contents ]
+            , p []
+                [ text model.message ]
             ]
         ]
+
+commaSeperate : List String -> String
+commaSeperate lst =
+    List.foldl (++) "" (List.intersperse ", " lst)
 
 onchange address action =
     on
         "change"
-        parseSelectedFile                      -- Decode Value
-        (\v -> Signal.message address (action [v]))
-
-onchange' address action =
-    on
-        "change"
-        parseSelectedFiles                      -- Decode Value
+        parseSelectedFiles                      -- Decode (List NativeFile)
         (\v -> Signal.message address (action v))
 
 onsubmit address action =  -- onSubmit but with preventDefault
@@ -142,30 +145,11 @@ containerStyles =
     style
         [ ( "padding", "20px")
         ]
-dropZoneDefault =
-    style
-        [ ( "height", "120px")
-        , ( "border-radius", "10px")
-        , ( "border", "3px dashed steelblue")
-        ]
-dropZoneHover =
-    style
-        [ ( "height", "120px")
-        , ( "border-radius", "10px")
-        , ( "border", "3px dashed red")
-        ]
 
 -- TASKS
 
-loadData : String -> Effects Action
-loadData inputId =
-    getTextFile inputId
-        |> Task.toResult
-        |> Task.map FileData
-        |> Effects.task
---
-loadData' : Json.Value -> Effects Action
-loadData' fileValue =
+readTextFile : Json.Value -> Effects Action
+readTextFile fileValue =
     readAsTextFile fileValue
         |> Task.toResult
         |> Task.map FileData
