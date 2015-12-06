@@ -12,11 +12,13 @@ module FileReader
     , parseDroppedFiles
     ) where
 
-{-| Elm bindings to HTML5 Reader API.
+{-| Elm bindings for HTML5 FileReader API.
 
-# Read file as text string
-@docs Error, readAsTextFile, readAsArrayBuffer, readAsDataUrl
+# Read file from disk using HTML5 FileReader API.
 
+@docs FileRef, FileContentArrayBuffer, FileContentDataUrlError,
+readAsTextFile, readAsArrayBuffer, readAsDataUrl, toString,
+parseSelectedFiles, parseDroppedFiles
 -}
 
 import Signal
@@ -26,36 +28,33 @@ import Native.FileReader
 import Json.Decode as Json exposing
     (Decoder, Value, (:=), andThen, at, oneOf, succeed,
      object1, object2, object4, string, int, null, value)
+
 import MimeHelpers
 
+{-| Helper aliases
+
+    type alias FileRef = Value
+    type alias FileContentArrayBuffer = Value
+    type alias FileContentDataUrl = Value
+-}
 type alias FileRef = Value
 type alias FileContentArrayBuffer = Value
 type alias FileContentDataUrl = Value
-{-| FileReader can fail in one of four cases:
 
+{-| FileReader can fail in one of two cases:
+
+ - the File reference / blob passed in was not valid
  - the Id specified in getTextFile does not match an input of type file in the document
- - the blob passed in was not valid
- - no file has been chosen
- - the contents of the file cannot be read.
 -}
 type Error
     = NoValidBlob
     | ReadFail
-    -- | IdNotFound
-    -- | NoFileSpecified
 
-{-| Takes the id of an `input` of `type="file"` and attempts
-to read the text file associated with it by the user.
+{-| Takes a "File" or "Blob" JS object as a Json.Value, and
+returns a task that reads in the file as a text file. The text vlue returned
+in the Success case will be represented as a String to Elm.
 
-    getTextFile "upload"
--}
--- getTextFile : String -> Task Error String
--- getTextFile = Native.FileReader.getTextFile
-
-
-{-| TBD.
-
-    readAsTextFile val
+    readAsTextFile ref
 -}
 readAsTextFile : FileRef -> Task Error String
 readAsTextFile = Native.FileReader.readAsTextFile
@@ -65,7 +64,7 @@ and starts a task to read the contents as an ArrayBuffer.
 The ArrayBuffer value returned in the Success case of the Task will
 be represented as a Json.Value to Elm.
 
-    readAsArrayBuffer val
+    readAsArrayBuffer ref
 -}
 readAsArrayBuffer : FileRef -> Task Error FileContentArrayBuffer
 readAsArrayBuffer = Native.FileReader.readAsArrayBuffer
@@ -76,23 +75,24 @@ be assigned to the src property of an img e.g.).
 The DataURL value returned in the Success case of the Task will
 be represented as a Json.Value to Elm.
 
-    readAsDataUrl val
+    readAsDataUrl ref
 -}
 readAsDataUrl : FileRef -> Task Error FileContentDataUrl
 readAsDataUrl = Native.FileReader.readAsDataUrl
 
+{-| Helper function for errors.
 
+    toString ReadFail   -- == "File reading error"
+-}
 toString : Error -> String
 toString err =
     case err of
         ReadFail -> "File reading error"
         NoValidBlob -> "Blob was not valid"
 
-
-{-| Helper type for the File JS event object resulting
-from file select and drag 'n drop. The first three elements are
-useful meta data, while the fourth is the handle needed to read
-the file
+{-| Helper type for interpreting the Files event value from Input and drag 'n drop.
+The first three elements are useful meta data, while the fourth is the handle
+needed to read the file.
 
     type alias NativeFile =
         { name : String
@@ -107,22 +107,46 @@ type alias NativeFile =
     , mimeType : Maybe MimeHelpers.MimeType
     , blob : FileRef
     }
-{-|
+
+{-| Parse change event from an HTML input element with 'type="file"'.
+Returns a list of file objects.
+
+    onchange : (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute
+    onchange address actionCreator =
+        on
+            "change"
+            parseSelectedFiles
+            (\vals -> Signal.message address (actionCreator vals))
 -}
 parseSelectedFiles : Decoder (List NativeFile)
 parseSelectedFiles =
     eventParser "target"
 
-{-|
+{-| Parse files selected using an HTML drop event.
+Returns a list of file objects.
+
+    ondrop : (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute
+    ondrop actionCreator address =
+        onWithOptions
+            "drop"
+            {stopPropagation = True, preventDefault = True}
+            parseDroppedFiles
+            (\vals -> Signal.message address (actionCreator vals))
+
 -}
 parseDroppedFiles : Decoder (List NativeFile)
 parseDroppedFiles =
     eventParser "dataTransfer"
 
--- Unexported Helpers
--- Json decoders for the somewhat weird drop eventdata structure. the .dataTransfer.files property is a JS FileList object which is not an array so cannot
--- be parsed with array, but has to be accessed in the form .dataTransfer.files[index]. This hopefully explains the strange (toString index)
--- way to get a file at an index
+{- Un-exported Helpers
+
+The Files event has a structure
+
+    { 1 : file1..., 2: file2..., 3 : ... }
+
+It also inherits a 'length' property that we read first and use (in parseFiles)
+to read the file values themselves
+-}
 eventParser : String -> Decoder (List NativeFile)
 eventParser field =
     at
@@ -147,11 +171,15 @@ fileAt : Int -> Decoder NativeFile
 fileAt index =
     (Basics.toString index) := nativeFile
 
+{- mime type: parsed as string and then converted to a MimeType
+blob: the whole JS File object as a Json.Value so we can pass
+it to a library that reads the content with a native FileReader
+-}
 nativeFile : Decoder NativeFile
 nativeFile =
     object4
         NativeFile
-            ("name" := string) -- name
-            ("size" := int) -- size
-            (object1 MimeHelpers.parseMimeType ("type" := string)) -- mime type that is parsed as string and then converted to a MimeType
-            value -- the whole JS File object as a Json.Value so we can pass it to a library that reads the content with a native FileReader
+            ("name" := string)
+            ("size" := int)
+            (object1 MimeHelpers.parseMimeType ("type" := string))
+            value
