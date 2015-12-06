@@ -1,11 +1,13 @@
-# Elm HTML5 FileReader controls
+# Elm HTML5 FileReader bindings
 
-Implementations for the [HTML5 file upload control](http://www.w3.org/TR/html-markup/input.file.html), which is implemented in browsers via the native `FileReader` class.
+Bindings for the [HTML5 file upload control](http://www.w3.org/TR/html-markup/input.file.html), which is implemented in browsers via the native `FileReader` class.
 
-    FileReaderInstance.readAsText(fileOrBlob);
-    FileReaderInstance.readAsArrayBuffer(fileOrBlob);
-    FileReaderInstance.readAsDataURL(fileOrBlob);
+FileReader has three main methods (see [MDN](https://developer.mozilla.org/en/docs/Web/API/FileReader)):
 
-    getTextFile : String -> Task Error String
+    FileReaderInstance.readAsText();
+    FileReaderInstance.readAsArrayBuffer();
+    FileReaderInstance.readAsDataURL();
 
-Implementations using file Input types and drag 'n drop are provided in the `examples` directory.
+The module also provides helper Elm decoders for `change` events on `<Input type="file">` and `drop` events, together with a set of examples.
+
+Simon Hampton, Daniel Bachler
