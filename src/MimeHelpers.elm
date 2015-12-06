@@ -1,28 +1,30 @@
-module MimeHelpers 
+{- TO BE MOVED TO LIBRARY BEFORE PUBLICATION -}
+
+module MimeHelpers
   ( MimeImage
   , MimeAudio
   , MimeVideo
   , MimeText
   , MimeType(Image, Audio, Video, Text, OtherMimeType)
   , parseMimeType) where
--- This is an incomplete, somewhat arbitrary mapping of the most common browser mime types to custom types. 
--- See https://code.google.com/p/chromium/codesearch#chromium/src/net/base/mime_util.cc&l=201 for a full list of Mime types 
+-- This is an incomplete, somewhat arbitrary mapping of the most common browser mime types to custom types.
+-- See https://code.google.com/p/chromium/codesearch#chromium/src/net/base/mime_util.cc&l=201 for a full list of Mime types
 
 import String
 
-type MimeImage 
+type MimeImage
   = Jpeg
   | Png
   | Gif
   | OtherImage
 
-type MimeAudio 
+type MimeAudio
   = Mp3
   | Ogg
   | Wav
   | OtherAudio
 
-type MimeVideo 
+type MimeVideo
   = Mp4
   | Mpeg
   | Quicktime
@@ -30,20 +32,20 @@ type MimeVideo
   | Webm
   | OtherVideo
 
-type MimeText 
+type MimeText
   = PlainText
   | Html
   | Css
   | Xml
   | OtherText
 
-type MimeType = 
+type MimeType =
   Image MimeImage
   | Audio MimeAudio
   | Video MimeVideo
-  | Text MimeText  
+  | Text MimeText
   | OtherMimeType
-  
+
 parseMimeType: String -> Maybe MimeType
 parseMimeType mimeString =
   case (String.toLower mimeString) of
@@ -63,9 +65,9 @@ parseMimeType mimeString =
     "text/html" -> Just <| Text Html
     "text/css" -> Just <| Text Css
     "text/xml" -> Just <| Text Xml
-    lowerCaseMimeString -> 
+    lowerCaseMimeString ->
       if (String.startsWith "image" lowerCaseMimeString) then
-        Just <| Image OtherImage               
+        Just <| Image OtherImage
       else if (String.startsWith "audio" lowerCaseMimeString) then
         Just <| Audio OtherAudio
       else if (String.startsWith "video" lowerCaseMimeString) then

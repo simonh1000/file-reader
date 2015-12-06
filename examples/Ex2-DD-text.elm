@@ -9,7 +9,6 @@ import Json.Decode as Json exposing (Value, andThen)
 
 import FileReader exposing (FileRef, NativeFile, readAsTextFile, Error(..))
 import DragDrop exposing (Action(Drop), dragDropEventHandlers)
--- import Decoders exposing (..)
 import MimeHelpers exposing (MimeType(Text))
 
 -- MODEL
@@ -70,17 +69,17 @@ view address model =
         , renderDropZone address model.dropZone
         , div
             []
-            [ text <| "Files: " ++ commaSeperate (List.map .name model.files)
+            [ text <| "Files: " ++ commaSeparate (List.map .name model.files)
             ]
         , div
             [] <|
             -- List.map text model.contents
-            [ text <| "Content: " ++ commaSeperate model.contents ]
+            [ text <| "Content: " ++ commaSeparate model.contents ]
         , p [] [ text model.message ]
         ]
 
-commaSeperate : List String -> String
-commaSeperate lst =
+commaSeparate : List String -> String
+commaSeparate lst =
     List.foldl (++) "" (List.intersperse ", " lst)
 
 renderDropZone : Signal.Address Action -> DragDrop.HoverState -> Html
@@ -91,19 +90,17 @@ renderDropZone address hoverState =
 
 renderZoneAttributes : Signal.Address Action -> DragDrop.HoverState -> List Html.Attribute
 renderZoneAttributes address hoverState =
-  (case hoverState of
+    (case hoverState of
         DragDrop.Normal ->
           dropZoneDefault
         DragDrop.Hovering ->
           dropZoneHover
-  )
-  ::
-  dragDropEventHandlers (Signal.forwardTo address DnD)
+    )
+    ::
+    dragDropEventHandlers (Signal.forwardTo address DnD)
 
 containerStyles =
-    style
-        [ ( "padding", "20px")
-        ]
+    style [ ( "padding", "20px") ]
 dropZoneDefault =
     style
         [ ( "height", "120px")
@@ -118,19 +115,6 @@ dropZoneHover =
         ]
 
 -- TASKS
-
--- helper method not yet used
-isTextFile: NativeFile -> Bool
-isTextFile nativeFile =
-  case nativeFile.mimeType of
-    Just mimeType ->
-      case mimeType of
-        MimeHelpers.Text text ->
-          True
-        _ ->
-          False
-    Nothing ->
-      False
 
 readTextFile : FileRef -> Effects Action
 readTextFile fileValue =

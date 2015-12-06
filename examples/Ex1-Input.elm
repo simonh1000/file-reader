@@ -1,4 +1,3 @@
-
 import Html exposing (Html, div, input, button, h1, p, text, form)
 import Html.Attributes exposing (type', id, style, multiple)
 import Html.Events exposing (onClick, on, onSubmit, onWithOptions)
@@ -9,7 +8,6 @@ import Task
 import Json.Decode as Json exposing (Value, andThen)
 
 import FileReader exposing (..)
--- import Decoders exposing (..)
 
 type alias Files =
     List NativeFile
@@ -79,7 +77,6 @@ view address model =
                 [] [ text "Single file select + Upload separate" ]
             , input
                 [ type' "file"
-                , id "input0"
                 , onchange address FilesSelect
                 ] []
             , button
@@ -88,7 +85,7 @@ view address model =
             ]
         , div []
             [ h1
-                [] [ text "Multi Select with automatic upload" ]
+                [] [ text "Multiple files with automatic upload" ]
             , input
                 [ type' "file"
                 , onchange address FilesSelectUpload
@@ -96,11 +93,10 @@ view address model =
                 ] []
             ]
         , form
-            [ id "form0"
-            , onsubmit address (Submit "form0")
+            [ onsubmit address (Submit "form0")
             ]
             [ h1
-                [] [ text "Form, multi and button" ]
+                [] [ text "Form with submit button" ]
             , input
                 [ type' "file"
                 , onchange address FilesSelect
@@ -118,7 +114,9 @@ view address model =
                     "Files: " ++ commaSeperate (List.map .name model.selected)
                 ]
             , p []
-                [ text <| "Contents: " ++ commaSeperate model.contents ]
+                [ text <|
+                    "Contents: " ++ commaSeperate model.contents
+                ]
             , p []
                 [ text model.message ]
             ]
@@ -142,9 +140,7 @@ onsubmit address action =  -- onSubmit but with preventDefault
         (\_ -> Signal.message address action)
 
 containerStyles =
-    style
-        [ ( "padding", "20px")
-        ]
+    style [ ( "padding", "20px") ]
 
 -- TASKS
 

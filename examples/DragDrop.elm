@@ -10,14 +10,12 @@ module DragDrop
   , dragDropEventHandlers
   ) where
 
-import Html exposing (Html, Attribute, div, text)
--- import Html.Attributes exposing (..)
+-- import Effects exposing (Effects)
+-- import Html exposing (Html, Attribute, div, text)
 import Html.Events exposing (onWithOptions)
+import Json.Decode as Json
 
-import Json.Decode as Json exposing (andThen)
-import Effects exposing (Effects)
-
-import FileReader exposing (..)
+import FileReader exposing (parseDroppedFiles, NativeFile)
 
 -- MODEL
 
@@ -70,7 +68,6 @@ onDragFunctionDecodeFiles nativeEventName actionCreator address =
     onWithOptions
         nativeEventName
         {stopPropagation = True, preventDefault = True}
-        -- (parseLength `andThen` parseFilenames)
         parseDroppedFiles
         (\vals -> Signal.message address (actionCreator vals))
 
