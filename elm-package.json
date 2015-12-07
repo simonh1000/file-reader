@@ -2,16 +2,16 @@
     "version": "1.0.0",
     "summary": "Elm bindings for HTML5 FileReader API",
     "repository": "https://github.com/simonh1000/file-reader.git",
-    "author": "Simon Hampton, Daniel Blacher",
     "license": "BSD3",
     "source-directories": [
-        ".", "./src"
+        "./src"
     ],
     "exposed-modules": [
         "FileReader"
     ],
     "native-modules": true,
     "dependencies": {
+        "danyx23/elm-mimetype": "1.0.0 <= v < 2.0.0",
         "elm-lang/core": "3.0.0 <= v < 4.0.0"
     },
     "elm-version": "0.16.0 <= v < 0.17.0"

@@ -39,7 +39,7 @@ import Json.Decode exposing
     (Decoder, decodeValue, (:=), andThen, at, oneOf, succeed,
      object1, object2, object4, string, int, null, value, maybe, keyValuePairs, map)
 
-import MimeHelpers
+import MimeType
 
 {-| A FileRef (or Blob) is a Elm Json Value.
 -}
@@ -115,14 +115,14 @@ needed to read the file.
     type alias NativeFile =
         { name : String
         , size : Int
-        , mimeType : Maybe MimeHelpers.MimeType
+        , mimeType : Maybe MimeType.MimeType
         , blob : Value
         }
 -}
 type alias NativeFile =
     { name : String
     , size : Int
-    , mimeType : Maybe MimeHelpers.MimeType
+    , mimeType : Maybe MimeType.MimeType
     , blob : FileRef
     }
 
@@ -167,7 +167,7 @@ isTextFile fileRef =
             case mimeVal of
                 Just mimeType ->
                     case mimeType of
-                        MimeHelpers.Text text ->
+                        MimeType.Text text ->
                             True
                         _ ->
                             False
@@ -191,9 +191,9 @@ fileParser field =
         [ field, "files" ] <|
         map (List.filterMap snd) (keyValuePairs <| maybe nativeFile)
 
-mtypeDecoder : Decoder (Maybe MimeHelpers.MimeType)
+mtypeDecoder : Decoder (Maybe MimeType.MimeType)
 mtypeDecoder =
-    object1 MimeHelpers.parseMimeType ("type" := string)
+    object1 MimeType.parseMimeType ("type" := string)
 
 {- mime type: parsed as string and then converted to a MimeType
 blob: the whole JS File object as a Json.Value so we can pass
