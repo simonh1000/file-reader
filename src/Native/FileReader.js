@@ -14,6 +14,14 @@ Elm.Native.FileReader.make = function(localRuntime){
 
     function useReader(method, fileObjectToRead) {
         return Task.asyncFunction(function(callback){
+
+            /*
+             * Test for existence of FileRader using
+             * if(window.FileReader) { ...
+             * http://caniuse.com/#search=filereader
+             * main gap is IE10 and 11 which do not support readAsBinaryFile
+             * but we do not use this API either as it is deprecated
+             */
             var reader = new FileReader();
 
             reader.onload = function(evt) {
@@ -24,6 +32,7 @@ Elm.Native.FileReader.make = function(localRuntime){
                 return callback(Task.fail({ctor : 'ReadFail'}));
             };
 
+            // Error if not passed an objectToRead or if it is not a Blob
             if (!fileObjectToRead || !(fileObjectToRead instanceof Blob)) {
                 return callback(Task.fail({ctor : 'NoValidBlob'}));
             }

@@ -18,7 +18,9 @@ module FileReader
     FileReaderInstance.readAsArrayBuffer();
     FileReaderInstance.readAsDataURL();
 
-The module also provides helper Json Decoders for the files values on `<Input type="file">` `change` events, and on `drop` events, together with a set of examples.
+The module also provides helper Json Decoders for the files values on
+`<Input type="file">` `change` events, and on `drop` events,
+together with a set of examples.
 
 # API functions
 @docs readAsTextFile, readAsArrayBuffer, readAsDataUrl
@@ -30,13 +32,12 @@ The module also provides helper Json Decoders for the files values on `<Input ty
 @docs parseSelectedFiles, parseDroppedFiles
 -}
 
-import Signal
-import Task exposing (Task, fail)
-
 import Native.FileReader
+
+import Task exposing (Task, fail)
 import Json.Decode exposing
     (Decoder, decodeValue, (:=), andThen, at, oneOf, succeed,
-     object1, object2, object4, string, int, null, value)
+     object1, object2, object4, string, int, null, value, maybe, keyValuePairs, map)
 
 import MimeHelpers
 
@@ -137,7 +138,7 @@ Returns a list of files.
 -}
 parseSelectedFiles : Decoder (List NativeFile)
 parseSelectedFiles =
-    eventParser "target"
+    fileParser "target"
 
 {-| Parse files selected using an HTML drop event.
 Returns a list of files.
@@ -153,7 +154,7 @@ Returns a list of files.
 -}
 parseDroppedFiles : Decoder (List NativeFile)
 parseDroppedFiles =
-    eventParser "dataTransfer"
+    fileParser "dataTransfer"
 
 {- UN-EXPORTED HELPERS -}
 
@@ -180,32 +181,15 @@ The Files event has a structure
 
     { 1 : file1..., 2: file2..., 3 : ... }
 
-It also inherits a 'length' property that we read first and use (in parseFiles)
-to read the file values themselves
+It also inherits other properties that we need to ignore during parsing.
+fileParser achieves this by using Json.maybe and then filtering out Nothing(s)
 -}
-eventParser : String -> Decoder (List NativeFile)
-eventParser field =
+
+fileParser : String -> Decoder (List NativeFile)
+fileParser field =
     at
-        [ field, "files" ]
-        (filesLength `andThen` parseFiles)
-
-filesLength : Decoder Int
-filesLength =
-    oneOf
-        [ object1 identity ("length" := int)
-        , null 0
-        ]
-
-parseFiles : Int -> Decoder (List NativeFile)
-parseFiles count =
-    List.foldl
-        (\e -> object2 (::) (fileAt e))
-        (succeed [])
-        [0 .. count - 1]
-
-fileAt : Int -> Decoder NativeFile
-fileAt index =
-    (Basics.toString index) := nativeFile
+        [ field, "files" ] <|
+        map (List.filterMap snd) (keyValuePairs <| maybe nativeFile)
 
 mtypeDecoder : Decoder (Maybe MimeHelpers.MimeType)
 mtypeDecoder =
