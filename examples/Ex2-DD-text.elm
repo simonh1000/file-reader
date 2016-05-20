@@ -1,15 +1,11 @@
 import Html exposing (Html, div, input, button, h1, p, text)
 import Html.Attributes exposing (type', id, style)
-import Html.Events exposing (onClick, on)
 import StartApp
 import Effects exposing (Effects)
 import Task
 
-import Json.Decode as Json exposing (Value, andThen)
-
 import FileReader exposing (FileRef, NativeFile, readAsTextFile, Error(..))
 import DragDrop exposing (Action(Drop), dragDropEventHandlers)
-import MimeHelpers exposing (MimeType(Text))
 
 -- MODEL
 
