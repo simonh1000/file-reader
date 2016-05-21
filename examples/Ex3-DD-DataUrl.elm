@@ -1,18 +1,12 @@
 import Html exposing (Html, div, input, button, p, text, img)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onWithOptions)
 import StartApp
 import Effects exposing (Effects)
 import Task
-import Json.Decode exposing (..)
-import Json.Encode
-
-import Json.Decode as Json exposing (Value, andThen)
 
 import FileReader exposing (..)
-import MimeHelpers exposing (MimeType(..))
+import MimeType exposing (MimeType(..))
 import DragDrop exposing (Action(Drop), dragDropEventHandlers, HoverState(..))
--- import Decoders exposing (..)
 
 
 -- Model types
@@ -74,7 +68,7 @@ dropAllowedForFile file =
       False
     Just mimeType ->
       case mimeType of
-        MimeHelpers.Image _ ->
+        MimeType.Image _ ->
             True
         _ ->
             False

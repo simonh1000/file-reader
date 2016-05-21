@@ -11,7 +11,7 @@ module DragDrop
   ) where
 
 -- import Effects exposing (Effects)
--- import Html exposing (Html, Attribute, div, text)
+import Html exposing (Attribute)
 import Html.Events exposing (onWithOptions)
 import Json.Decode as Json
 
