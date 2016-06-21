@@ -1,19 +1,9 @@
-Elm.Native = Elm.Native || {};
-Elm.Native.FileReader = {};
+var _user$project$Native_FileReader = function() {
 
-Elm.Native.FileReader.make = function(localRuntime){
-
-    localRuntime.Native = localRuntime.Native || {};
-    localRuntime.Native.FileReader = localRuntime.Native.FileReader || {};
-
-    if (localRuntime.Native.FileReader.values){
-        return localRuntime.Native.FileReader.values;
-    }
-
-    var Task = Elm.Native.Task.make(localRuntime);
+    var scheduler = _elm_lang$core$Native_Scheduler;
 
     function useReader(method, fileObjectToRead) {
-        return Task.asyncFunction(function(callback){
+        return scheduler.nativeBinding(function(callback){
 
             /*
              * Test for existence of FileRader using
@@ -25,16 +15,16 @@ Elm.Native.FileReader.make = function(localRuntime){
             var reader = new FileReader();
 
             reader.onload = function(evt) {
-                return callback(Task.succeed(evt.target.result))
+                return callback(scheduler.succeed(evt.target.result));
             };
 
             reader.onerror = function() {
-                return callback(Task.fail({ctor : 'ReadFail'}));
+                return callback(scheduler.fail({ctor : 'ReadFail'}));
             };
 
             // Error if not passed an objectToRead or if it is not a Blob
             if (!fileObjectToRead || !(fileObjectToRead instanceof Blob)) {
-                return callback(Task.fail({ctor : 'NoValidBlob'}));
+                return callback(scheduler.fail({ctor : 'NoValidBlob'}));
             }
 
             return reader[method](fileObjectToRead);
@@ -61,4 +51,4 @@ Elm.Native.FileReader.make = function(localRuntime){
         readAsArrayBuffer : readAsArrayBuffer,
         readAsDataUrl: readAsDataUrl
     };
-};
+}();

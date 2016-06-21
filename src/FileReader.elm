@@ -1,4 +1,4 @@
-module FileReader
+module FileReader exposing
     ( FileRef
     , FileContentArrayBuffer
     , FileContentDataUrl
@@ -10,7 +10,7 @@ module FileReader
     , toString
     , parseSelectedFiles
     , parseDroppedFiles
-    ) where
+    )
 
 {-| Elm bindings for the main [HTML5 FileReader APIs](https://developer.mozilla.org/en/docs/Web/API/FileReader):
 
