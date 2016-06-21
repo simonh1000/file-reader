@@ -1,12 +1,11 @@
 import Html exposing (Html, div, input, button, p, text, img)
 import Html.Attributes exposing (..)
-import StartApp
-import Effects exposing (Effects)
 import Task
+import Html.App as Html
 
 import FileReader exposing (..)
 import MimeType exposing (MimeType(..))
-import DragDrop exposing (Action(Drop), dragDropEventHandlers, HoverState(..))
+import DragDrop exposing (Msg(Drop), dragDropEventHandlers, HoverState(..))
 
 
 -- Model types
@@ -21,15 +20,16 @@ init : Model
 init =
   Model DragDrop.init Nothing Nothing
 
-type Action =
-  DnD DragDrop.Action
-  | LoadImageCompleted (Result FileReader.Error FileContentDataUrl) -- the loading of the file contents is complete
+type Msg =
+  DnD DragDrop.Msg
+  | LoadImageSucceed FileContentDataUrl     -- the loading of the file contents is success
+  | LoadImageFail FileReader.Error          -- the loading of the file contents is failed
 
 -- UPDATE
 
-update : Action -> Model -> (Model, Effects Action)
-update action model =
-    case action of
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+    case msg of
       -- Case drop. Let the DnD library update it's model and emmit the loading effect
       DnD (Drop files) ->
         ( { model
@@ -42,21 +42,20 @@ update action model =
         ( { model
           | dnDModel = DragDrop.update a model.dnDModel
           }
-          , Effects.none
+          , Cmd.none
         )
       -- The loading effect has emmited the LoadImageCompleted action, check the result and update the model
-      LoadImageCompleted result -> case result of
-        Result.Err err ->
-          ( { model
-            | imageLoadError = Just err
-            }
-            , Effects.none
-          )
-        Result.Ok val ->
+      LoadImageSucceed val ->
           ( { model
             | imageData = Just val
             }
-            , Effects.none
+            , Cmd.none
+          )
+      LoadImageFail err ->
+          ( { model
+            | imageLoadError = Just err
+            }
+            , Cmd.none
           )
 
 -- VIEW
@@ -73,15 +72,16 @@ dropAllowedForFile file =
         _ ->
             False
 
-view : Signal.Address Action -> Model -> Html
-view address model =
+view : Model -> Html Msg
+view model =
+    Html.map DnD <|
     div
     (  countStyle model.dnDModel
-    :: dragDropEventHandlers (Signal.forwardTo address DnD))
+    :: dragDropEventHandlers)
     [ renderImageOrPrompt model
     ]
 
-renderImageOrPrompt : Model -> Html
+renderImageOrPrompt : Model -> Html a
 renderImageOrPrompt model =
   case model.imageLoadError of
     Just err ->
@@ -99,7 +99,7 @@ renderImageOrPrompt model =
           , style [("max-width", "100%")]]
           []
 
-countStyle : DragDrop.HoverState -> Html.Attribute
+countStyle : DragDrop.HoverState -> Html.Attribute a
 countStyle dragState =
   style
     [ ("font-size", "20px")
@@ -116,40 +116,31 @@ countStyle dragState =
     ]
 
 -- TASKS
-loadFirstFile : List NativeFile -> Effects Action
+loadFirstFile : List NativeFile -> Cmd Msg
 loadFirstFile =
   loadFirstFileWithLoader loadData
 
-loadData : FileRef -> Effects Action
+loadData : FileRef -> Cmd Msg
 loadData file =
     FileReader.readAsDataUrl file      -- will return a Task FileReader.Error Json.Value
-        |> Task.toResult               -- gets turned into a Task Never (Result FileReader.Error Json.Value)
-        |> Task.map LoadImageCompleted -- gets turned into the LoadImageCompleted Action with the Result as a payload
-        |> Effects.task                -- return as Effects Action
+        |> Task.perform LoadImageFail LoadImageSucceed
 
 -- small helper method to do nothing if 0 files were dropped, otherwise load the first file
-loadFirstFileWithLoader : (FileRef -> Effects Action) -> List NativeFile -> Effects Action
+loadFirstFileWithLoader : (FileRef -> Cmd Msg) -> List NativeFile -> Cmd Msg
 loadFirstFileWithLoader loader files =
   let
     maybeHead = List.head <| List.map .blob
                               (List.filter dropAllowedForFile files)
   in
     case maybeHead of
-      Nothing -> Effects.none
+      Nothing -> Cmd.none
       Just file -> loader file
 
 -- ----------------------------------
-app =
-    StartApp.start
-        { init = (init, Effects.none)
+main =
+    Html.program
+        { init = (init, Cmd.none)
         , update = update
         , view = view
-        , inputs = []
+        , subscriptions = (always Sub.none)
         }
-
-main =
-    app.html
-
-port tasks : Signal (Task.Task Effects.Never ())
-port tasks =
-    app.tasks
