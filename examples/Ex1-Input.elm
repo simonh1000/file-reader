@@ -1,9 +1,8 @@
 import Html exposing (Html, div, input, button, h1, p, text, form)
 import Html.Attributes exposing (type', id, style, multiple)
-import Html.Events exposing (onClick, on, onSubmit, onWithOptions)
-import StartApp
-import Effects exposing (Effects)
+import Html.Events exposing (onClick, on, onSubmit)
 import Task
+import Html.App as Html
 
 import Json.Decode as Json exposing (Value, andThen)
 
@@ -25,19 +24,20 @@ init =
     , contents = []
     }
 
-type Action
+type Msg
     = Upload                                    -- independent button
     | FilesSelect Files                         -- Update model, but without file read
     | FilesSelectUpload Files                   -- Update model and read files
     | Submit String                             -- Submit button in form
-    | FileData (Result FileReader.Error String) -- data returned
+    | FileDataSucceed String                    -- data returned when success
+    | FileDataFail FileReader.Error             -- data returned when failed
 
-update : Action -> Model -> (Model, Effects Action)
-update action model =
-    case action of
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+    case msg of
         Upload ->
             ( model
-            , Effects.batch <|
+            , Cmd.batch <|
                 List.map (readTextFile << .blob) model.selected
             )
 
@@ -46,41 +46,41 @@ update action model =
                 | selected = fileInstances
                 , message = "Something selected"
                }
-            , Effects.none
+            , Cmd.none
             )
         FilesSelectUpload fileInstances ->
             ( { model | selected = fileInstances }
-            , Effects.batch <|
+            , Cmd.batch <|
                 List.map (readTextFile << .blob) fileInstances
             )
         Submit _ ->
             ( { model | message = Basics.toString model.selected }
-            , Effects.batch <|
+            , Cmd.batch <|
                 List.map (readTextFile << .blob) model.selected
             )
 
-        FileData (Result.Ok str) ->
+        FileDataSucceed str ->
             ( { model | contents = str :: model.contents }
-            , Effects.none )
+            , Cmd.none )
 
-        FileData (Result.Err err) ->
+        FileDataFail err ->
             ( { model | message = FileReader.toString err }
-            , Effects.none )
+            , Cmd.none )
 
 -- VIEW
 
-view : Signal.Address Action -> Model -> Html
-view address model =
+view : Model -> Html Msg
+view model =
     div [ containerStyles ]
         [ div []
             [ h1
                 [] [ text "Single file select + Upload separate" ]
             , input
                 [ type' "file"
-                , onchange address FilesSelect
+                , onchange FilesSelect
                 ] []
             , button
-                [ onClick address Upload ]
+                [ onClick Upload ]
                 [ text "Upload" ]
             ]
         , div []
@@ -88,18 +88,18 @@ view address model =
                 [] [ text "Multiple files with automatic upload" ]
             , input
                 [ type' "file"
-                , onchange address FilesSelectUpload
+                , onchange FilesSelectUpload
                 , multiple True
                 ] []
             ]
         , form
-            [ onsubmit address (Submit "form0")
+            [ onSubmit (Submit "form0")
             ]
             [ h1
                 [] [ text "Form with submit button" ]
             , input
                 [ type' "file"
-                , onchange address FilesSelect
+                , onchange FilesSelect
                 , multiple True
                 ] []
             , button
@@ -126,43 +126,27 @@ commaSeperate : List String -> String
 commaSeperate lst =
     List.foldl (++) "" (List.intersperse ", " lst)
 
-onchange address action =
+onchange action =
     on
         "change"
-        parseSelectedFiles                      -- Decode (List NativeFile)
-        (\v -> Signal.message address (action v))
+        (Json.object1 (\v -> action v) parseSelectedFiles)
 
-onsubmit address action =  -- onSubmit but with preventDefault
-    onWithOptions
-        "submit"
-        {stopPropagation = False, preventDefault = True}
-        Json.value
-        (\_ -> Signal.message address action)
 
 containerStyles =
     style [ ( "padding", "20px") ]
 
 -- TASKS
 
-readTextFile : Json.Value -> Effects Action
+readTextFile : Json.Value -> Cmd Msg
 readTextFile fileValue =
     readAsTextFile fileValue
-        |> Task.toResult
-        |> Task.map FileData
-        |> Effects.task
+        |> Task.perform FileDataFail FileDataSucceed
 
 -- ----------------------------------
-app =
-    StartApp.start
-        { init = (init, Effects.none)
+main =
+    Html.program
+        { init = (init, Cmd.none)
         , update = update
         , view = view
-        , inputs = []
+        , subscriptions = (always Sub.none)
         }
-
-main =
-    app.html
-
-port tasks : Signal (Task.Task Effects.Never ())
-port tasks =
-    app.tasks
