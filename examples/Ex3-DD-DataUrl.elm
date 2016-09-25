@@ -20,8 +20,8 @@ init : Model
 init =
   Model DragDrop.init Nothing Nothing
 
-type Msg =
-  DnD DragDrop.Msg
+type Msg
+  = DnD DragDrop.Msg
   | LoadImageSucceed FileContentDataUrl     -- the loading of the file contents is success
   | LoadImageFail FileReader.Error          -- the loading of the file contents is failed
 

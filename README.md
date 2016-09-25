@@ -10,4 +10,10 @@ FileReader has three main methods (see [MDN](https://developer.mozilla.org/en/do
 
 The module also provides helper Elm decoders for `change` events on `<Input type="file">` and `drop` events, together with a set of examples.
 
-Simon Hampton, Daniel Bachler
+## Disclaimer
+
+This project began in the time of 0.16 and was submitted as a library including NativeCode to the elm-package manager. It was never OKed, as was the case with all native code at that time. The native code was subsequently updated by [WangBoxue](https://github.com/WangBoxue) to work with 0.17, and can be used as such. In theory Evan plans to make all browser web APIs available to Elm users and when that includes FileReader, this library will remove the native code. In the meantime, note that the official guidance would be to use a port rather than a native library such as this. However, you will see that the native code covers the absolute minimum to expose the APIs so I believe this will not jeopardise the stability of your Elm apps.
+
+To use, not in particular that you need to add `"native-modules": true,` to your elm-package.json file as is done in the examples.
+
+Simon Hampton, [Daniel Bachler](https://github.com/danyx23)

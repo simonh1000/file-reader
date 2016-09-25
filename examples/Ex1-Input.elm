@@ -28,7 +28,7 @@ type Msg
     = Upload                                    -- independent button
     | FilesSelect Files                         -- Update model, but without file read
     | FilesSelectUpload Files                   -- Update model and read files
-    | Submit String                             -- Submit button in form
+    | Submit                             -- Submit button in form
     | FileDataSucceed String                    -- data returned when success
     | FileDataFail FileReader.Error             -- data returned when failed
 
@@ -36,36 +36,23 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         Upload ->
-            ( model
-            , Cmd.batch <|
-                List.map (readTextFile << .blob) model.selected
-            )
+            model ! List.map readTextFile model.selected
 
         FilesSelect fileInstances ->
-            ( { model
+            { model
                 | selected = fileInstances
                 , message = "Something selected"
-               }
-            , Cmd.none
-            )
+               } ! []
         FilesSelectUpload fileInstances ->
-            ( { model | selected = fileInstances }
-            , Cmd.batch <|
-                List.map (readTextFile << .blob) fileInstances
-            )
-        Submit _ ->
-            ( { model | message = Basics.toString model.selected }
-            , Cmd.batch <|
-                List.map (readTextFile << .blob) model.selected
-            )
+            { model | selected = fileInstances } ! List.map readTextFile fileInstances
+        Submit ->
+            { model | message = Basics.toString model.selected } ! List.map readTextFile model.selected
 
         FileDataSucceed str ->
-            ( { model | contents = str :: model.contents }
-            , Cmd.none )
+            { model | contents = str :: model.contents } ! []
 
         FileDataFail err ->
-            ( { model | message = FileReader.toString err }
-            , Cmd.none )
+            { model | message = FileReader.toString err } ! []
 
 -- VIEW
 
@@ -93,10 +80,9 @@ view model =
                 ] []
             ]
         , form
-            [ onSubmit (Submit "form0")
+            [ onSubmit Submit
             ]
-            [ h1
-                [] [ text "Form with submit button" ]
+            [ h1 [] [ text "Form with submit button" ]
             , input
                 [ type' "file"
                 , onchange FilesSelect
@@ -117,7 +103,7 @@ view model =
                 [ text <|
                     "Contents: " ++ commaSeperate model.contents
                 ]
-            , p []
+            , div []
                 [ text model.message ]
             ]
         ]
@@ -137,9 +123,9 @@ containerStyles =
 
 -- TASKS
 
-readTextFile : Json.Value -> Cmd Msg
+readTextFile : NativeFile -> Cmd Msg
 readTextFile fileValue =
-    readAsTextFile fileValue
+    readAsTextFile fileValue.blob
         |> Task.perform FileDataFail FileDataSucceed
 
 -- ----------------------------------
