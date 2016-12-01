@@ -12,13 +12,13 @@ The module also provides helper Elm decoders for `change` events on `<Input type
 
 ## Installation
 
-### elm-github-install
-https://github.com/gdotdesign/elm-github-install
+### [elm-github-install](https://github.com/gdotdesign/elm-github-install)
+
+I have not managed to make this work yet
 
 ### Manually
 
-To use, note in particular that you need to add `"native-modules": true,` to your elm-package.json file as is done in the examples.
-
+Note in particular that you need to add `"native-modules": true,` to your elm-package.json file as is done in the examples.
 
 
 ## Disclaimer
