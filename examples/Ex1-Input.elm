@@ -1,21 +1,23 @@
+module Main exposing (..)
+
 import Html exposing (Html, div, input, button, h1, p, text, form)
-import Html.Attributes exposing (type', id, style, multiple)
+import Html.Attributes exposing (type_, id, style, multiple)
 import Html.Events exposing (onClick, on, onSubmit)
 import Task
-import Html.App as Html
-
 import Json.Decode as Json exposing (Value, andThen)
-
 import FileReader exposing (..)
+
 
 type alias Files =
     List NativeFile
+
 
 type alias Model =
     { message : String
     , selected : Files
     , contents : List String
     }
+
 
 init : Model
 init =
@@ -24,15 +26,16 @@ init =
     , contents = []
     }
 
-type Msg
-    = Upload                                    -- independent button
-    | FilesSelect Files                         -- Update model, but without file read
-    | FilesSelectUpload Files                   -- Update model and read files
-    | Submit                             -- Submit button in form
-    | FileDataSucceed String                    -- data returned when success
-    | FileDataFail FileReader.Error             -- data returned when failed
 
-update : Msg -> Model -> (Model, Cmd Msg)
+type Msg
+    = Upload
+    | FilesSelect Files
+    | FilesSelectUpload Files
+    | Submit
+    | FileData (Result Error String)
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Upload ->
@@ -42,54 +45,65 @@ update msg model =
             { model
                 | selected = fileInstances
                 , message = "Something selected"
-               } ! []
+            }
+                ! []
+
         FilesSelectUpload fileInstances ->
             { model | selected = fileInstances } ! List.map readTextFile fileInstances
+
         Submit ->
             { model | message = Basics.toString model.selected } ! List.map readTextFile model.selected
 
-        FileDataSucceed str ->
+        FileData (Ok str) ->
             { model | contents = str :: model.contents } ! []
 
-        FileDataFail err ->
-            { model | message = FileReader.toString err } ! []
+        FileData (Err err) ->
+            { model | message = FileReader.prettyPrint err } ! []
+
+
 
 -- VIEW
+
 
 view : Model -> Html Msg
 view model =
     div [ containerStyles ]
         [ div []
             [ h1
-                [] [ text "Single file select + Upload separate" ]
+                []
+                [ text "Single file select + Upload separate" ]
             , input
-                [ type' "file"
+                [ type_ "file"
                 , onchange FilesSelect
-                ] []
+                ]
+                []
             , button
                 [ onClick Upload ]
                 [ text "Upload" ]
             ]
         , div []
             [ h1
-                [] [ text "Multiple files with automatic upload" ]
+                []
+                [ text "Multiple files with automatic upload" ]
             , input
-                [ type' "file"
+                [ type_ "file"
                 , onchange FilesSelectUpload
                 , multiple True
-                ] []
+                ]
+                []
             ]
         , form
             [ onSubmit Submit
             ]
             [ h1 [] [ text "Form with submit button" ]
             , input
-                [ type' "file"
+                [ type_ "file"
                 , onchange FilesSelect
                 , multiple True
-                ] []
+                ]
+                []
             , button
-                [ type' "submit" ]
+                [ type_ "submit" ]
                 [ text "Submit" ]
             ]
         , div []
@@ -97,41 +111,54 @@ view model =
                 [ text "Results" ]
             , p []
                 [ text <|
-                    "Files: " ++ commaSeperate (List.map .name model.selected)
+                    "Files: "
+                        ++ commaSeperate (List.map .name model.selected)
                 ]
             , p []
                 [ text <|
-                    "Contents: " ++ commaSeperate model.contents
+                    "Contents: "
+                        ++ commaSeperate model.contents
                 ]
             , div []
                 [ text model.message ]
             ]
         ]
 
+
 commaSeperate : List String -> String
 commaSeperate lst =
     List.foldl (++) "" (List.intersperse ", " lst)
 
+
 onchange action =
     on
         "change"
-        (Json.object1 (\v -> action v) parseSelectedFiles)
+        (Json.map (\v -> action v) parseSelectedFiles)
 
 
 containerStyles =
-    style [ ( "padding", "20px") ]
+    style [ ( "padding", "20px" ) ]
+
+
 
 -- TASKS
+
 
 readTextFile : NativeFile -> Cmd Msg
 readTextFile fileValue =
     readAsTextFile fileValue.blob
-        |> Task.perform FileDataFail FileDataSucceed
+        |> Task.map Ok
+        |> Task.onError (Task.succeed << Err)
+        |> Task.perform FileData
+
+
 
 -- ----------------------------------
+
+
 main =
     Html.program
-        { init = (init, Cmd.none)
+        { init = ( init, Cmd.none )
         , update = update
         , view = view
         , subscriptions = (always Sub.none)
