@@ -1,13 +1,14 @@
-import Html exposing (Html, div, input, button, h1, p, text)
-import Html.Attributes exposing (type', id, style)
-import StartApp
-import Effects exposing (Effects)
-import Task
+module Main exposing (..)
 
+import Html exposing (Html, div, input, button, h1, p, text)
+import Html.Attributes exposing (type_, id, style)
+import Task
 import FileReader exposing (FileRef, NativeFile, readAsTextFile, Error(..))
-import DragDrop exposing (Action(Drop), dragDropEventHandlers)
+import DragDrop exposing (Msg(Drop), dragDropEventHandlers)
+
 
 -- MODEL
+
 
 type alias Model =
     { message : String
@@ -15,6 +16,7 @@ type alias Model =
     , files : List NativeFile
     , contents : List String
     }
+
 
 init : Model
 init =
@@ -24,113 +26,127 @@ init =
     , contents = []
     }
 
+
+
 -- UPDATE
 
-type Action
-    = DnD DragDrop.Action
-    | FileData (Result FileReader.Error String)
 
-update : Action -> Model -> (Model, Effects Action)
-update action model =
-    case action of
+type Msg
+    = DnD DragDrop.Msg
+    | FileData (Result Error String)
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
         DnD (Drop files) ->
             ( { model
-              | dropZone = DragDrop.update (Drop files) model.dropZone   -- reset HoverState
-              , files = files
+                | dropZone =
+                    DragDrop.update (Drop files) model.dropZone
+                    -- reset HoverState
+                , files = files
               }
-            , Effects.batch <|
+            , Cmd.batch <|
                 List.map (readTextFile << .blob) files
             )
-        DnD a ->                -- drag events
+
+        DnD a ->
+            -- drag events
             ( { model | dropZone = DragDrop.update a model.dropZone }
-            , Effects.none
+            , Cmd.none
             )
 
-        FileData (Result.Ok str) ->
-            ( { model | contents = str :: model.contents }
-            , Effects.none
-            )
+        FileData (Ok str) ->
+            { model | contents = str :: model.contents } ! []
 
-        FileData (Result.Err err) ->
-            ( { model | message = FileReader.toString err }
-            , Effects.none
-            )
+        FileData (Err err) ->
+            { model | message = FileReader.prettyPrint err } ! []
+
+
 
 -- VIEW
 
-view : Signal.Address Action -> Model -> Html
-view address model =
+
+view : Model -> Html Msg
+view model =
     div [ containerStyles ]
-        [ h1 [] [ text "Drag 'n Drop" ]
-        , renderDropZone address model.dropZone
+        [ h1 [] [ text "Drag 'n Drop a text file" ]
+        , renderDropZone model.dropZone
         , div
             []
             [ text <| "Files: " ++ commaSeparate (List.map .name model.files)
             ]
-        , div
-            [] <|
-            -- List.map text model.contents
+        , div []
             [ text <| "Content: " ++ commaSeparate model.contents ]
         , p [] [ text model.message ]
         ]
+
 
 commaSeparate : List String -> String
 commaSeparate lst =
     List.foldl (++) "" (List.intersperse ", " lst)
 
-renderDropZone : Signal.Address Action -> DragDrop.HoverState -> Html
-renderDropZone address hoverState =
-  div
-    (renderZoneAttributes address hoverState)
-    []
 
-renderZoneAttributes : Signal.Address Action -> DragDrop.HoverState -> List Html.Attribute
-renderZoneAttributes address hoverState =
+renderDropZone : DragDrop.HoverState -> Html Msg
+renderDropZone hoverState =
+    Html.map DnD <|
+        div
+            (renderZoneAttributes hoverState)
+            []
+
+
+renderZoneAttributes : DragDrop.HoverState -> List (Html.Attribute DragDrop.Msg)
+renderZoneAttributes hoverState =
     (case hoverState of
         DragDrop.Normal ->
-          dropZoneDefault
+            dropZoneDefault
+
         DragDrop.Hovering ->
-          dropZoneHover
+            dropZoneHover
     )
-    ::
-    dragDropEventHandlers (Signal.forwardTo address DnD)
+        :: dragDropEventHandlers
+
 
 containerStyles =
-    style [ ( "padding", "20px") ]
+    style [ ( "padding", "20px" ) ]
+
+
 dropZoneDefault =
     style
-        [ ( "height", "120px")
-        , ( "border-radius", "10px")
-        , ( "border", "3px dashed steelblue")
+        [ ( "height", "120px" )
+        , ( "border-radius", "10px" )
+        , ( "border", "3px dashed steelblue" )
         ]
+
+
 dropZoneHover =
     style
-        [ ( "height", "120px")
-        , ( "border-radius", "10px")
-        , ( "border", "3px dashed red")
+        [ ( "height", "120px" )
+        , ( "border-radius", "10px" )
+        , ( "border", "3px dashed red" )
         ]
+
+
 
 -- TASKS
 
-readTextFile : FileRef -> Effects Action
+
+readTextFile : FileRef -> Cmd Msg
 readTextFile fileValue =
     readAsTextFile fileValue
-        |> Task.toResult
-        |> Task.map FileData
-        |> Effects.task
+        |> Task.map Ok
+        |> Task.onError (Task.succeed << Err)
+        |> Task.perform FileData
+
+
 
 -- ----------------------------------
-app =
-    StartApp.start
-        { init = (init, Effects.none)
-        , update = update
-        , view = view
-        , inputs = []
-        }
+
 
 main =
-    app.html
-
-port tasks : Signal (Task.Task Effects.Never ())
-port tasks =
-    app.tasks
+    Html.program
+        { init = ( init, Cmd.none )
+        , update = update
+        , view = view
+        , subscriptions = (always Sub.none)
+        }

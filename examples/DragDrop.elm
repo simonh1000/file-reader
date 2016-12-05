@@ -6,7 +6,7 @@
 module DragDrop
     exposing
         ( HoverState(..)
-        , Action(Drop)
+        , Msg(Drop)
         , init
         , update
         , dragDropEventHandlers
@@ -45,7 +45,7 @@ init =
 -- UPDATE
 
 
-type Action
+type Msg
     = DragEnter
       -- user enters the drop zone while dragging something
     | DragLeave
@@ -53,9 +53,9 @@ type Action
     | Drop (List NativeFile)
 
 
-update : Action -> Model -> Model
-update action model =
-    case action of
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
         DragEnter ->
             Hovering
 
@@ -70,12 +70,12 @@ update action model =
 -- View event handlers
 
 
-dragDropEventHandlers : Signal.Address Action -> List Attribute
-dragDropEventHandlers address =
-    [ onDragEnter address DragEnter
-    , onDragLeave address DragLeave
-    , onDragOver address DragEnter
-    , onDrop address
+dragDropEventHandlers : List (Attribute Msg)
+dragDropEventHandlers =
+    [ onDragEnter DragEnter
+    , onDragLeave DragLeave
+    , onDragOver DragEnter
+    , onDrop
     ]
 
 
@@ -83,39 +83,37 @@ dragDropEventHandlers address =
 -- Individual handler functions
 
 
-onDragFunctionIgnoreFiles : String -> Signal.Address a -> a -> Attribute
-onDragFunctionIgnoreFiles nativeEventName address action =
+onDragFunctionIgnoreFiles : String -> a -> Attribute a
+onDragFunctionIgnoreFiles nativeEventName action =
     onWithOptions
         nativeEventName
         { stopPropagation = False, preventDefault = True }
-        Json.value
-        (\_ -> Signal.message address action)
+        (Json.map (\_ -> action) Json.value)
 
 
-onDragFunctionDecodeFiles : String -> (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute
-onDragFunctionDecodeFiles nativeEventName actionCreator address =
+onDragFunctionDecodeFiles : String -> (List NativeFile -> Msg) -> Attribute Msg
+onDragFunctionDecodeFiles nativeEventName actionCreator =
     onWithOptions
         nativeEventName
         { stopPropagation = True, preventDefault = True }
-        parseDroppedFiles
-        (\vals -> Signal.message address (actionCreator vals))
+        (Json.map actionCreator parseDroppedFiles)
 
 
-onDragEnter : Signal.Address a -> a -> Attribute
+onDragEnter : a -> Attribute a
 onDragEnter =
     onDragFunctionIgnoreFiles "dragenter"
 
 
-onDragOver : Signal.Address a -> a -> Attribute
+onDragOver : a -> Attribute a
 onDragOver =
     onDragFunctionIgnoreFiles "dragover"
 
 
-onDragLeave : Signal.Address a -> a -> Attribute
+onDragLeave : a -> Attribute a
 onDragLeave =
     onDragFunctionIgnoreFiles "dragleave"
 
 
-onDrop : Signal.Address Action -> Html.Attribute
-onDrop address =
-    onDragFunctionDecodeFiles "drop" (\files -> Drop files) address
+onDrop : Attribute Msg
+onDrop =
+    onDragFunctionDecodeFiles "drop" (\files -> Drop files)

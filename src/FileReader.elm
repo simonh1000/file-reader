@@ -11,8 +11,11 @@ module FileReader
         , prettyPrint
         , parseSelectedFiles
         , parseDroppedFiles
+<<<<<<< HEAD
         , multipartBody
         , blobPart
+=======
+>>>>>>> master
         )
 
 {-| Elm bindings for the main [HTML5 FileReader APIs](https://developer.mozilla.org/en/docs/Web/API/FileReader):
@@ -29,7 +32,7 @@ together with a set of examples.
 @docs readAsTextFile, readAsArrayBuffer, readAsDataUrl
 
 # Helper aliases
-@docs NativeFile, FileRef, FileContentArrayBuffer, FileContentDataUrl, Error, toString
+@docs NativeFile, FileRef, FileContentArrayBuffer, FileContentDataUrl, Error, prettyPrint
 
 # Helper Json Decoders
 @docs parseSelectedFiles, parseDroppedFiles
@@ -138,12 +141,12 @@ readAsDataUrl =
     Native.FileReader.readAsDataUrl
 
 
-{-| Helper function for errors.
+{-| Pretty print FileReader errors.
 
-    toString ReadFail   -- == "File reading error"
+    prettyPrint ReadFail   -- == "File reading error"
 -}
-toString : Error -> String
-toString err =
+prettyPrint : Error -> String
+prettyPrint err =
     case err of
         ReadFail ->
             "File reading error"
@@ -244,17 +247,29 @@ isTextFile fileRef =
 
 
 fileParser : String -> Decoder (List NativeFile)
-fileParser field =
+fileParser fieldName =
     at
+<<<<<<< HEAD
         [ field, "files" ]
     <|
         map (List.filterMap snd) (keyValuePairs <| maybe nativeFile)
 
 
+=======
+        [ fieldName, "files" ]
+    <|
+        map (List.filterMap Tuple.second) (keyValuePairs <| maybe nativeFileDecoder)
+
+
+{-| mime type: parsed as string and then converted to a MimeType
+-}
+>>>>>>> master
 mtypeDecoder : Decoder (Maybe MimeType.MimeType)
 mtypeDecoder =
-    object1 MimeType.parseMimeType ("type" := string)
+    map MimeType.parseMimeType (field "type" string)
 
+
+<<<<<<< HEAD
 
 
 {- mime type: parsed as string and then converted to a MimeType
@@ -269,5 +284,15 @@ nativeFile =
         NativeFile
         ("name" := string)
         ("size" := int)
+=======
+{-| blob: the whole JS File object as a Json.Value so we can pass
+   it to a library that reads the content with a native FileReader
+-}
+nativeFileDecoder : Decoder NativeFile
+nativeFileDecoder =
+    map4 NativeFile
+        (field "name" string)
+        (field "size" int)
+>>>>>>> master
         mtypeDecoder
         value
