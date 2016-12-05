@@ -56,9 +56,48 @@ Elm.Native.FileReader.make = function(localRuntime){
         return useReader("readAsDataURL", fileObjectToRead);
     };
 
+    var multipart = function(dataList)
+    {
+    	var formData = new FormData();
+
+    	while (dataList.ctor !== '[]')
+    	{
+    		var data = dataList._0;
+    		if (data.ctor === 'StringPart')
+    		{
+    			formData.append(data._0, data._1);
+    		}
+    		else
+    		{
+    			var fileName = data._1.ctor === 'Nothing'
+    				? undefined
+    				: data._1._0;
+    			formData.append(data._0, data._2, fileName);
+                // formData.append(name, value, filename);
+    		}
+    		dataList = dataList._1;
+    	}
+        console.log({ ctor: 'FormDataBody', formData: formData });
+    	return { ctor: 'FormDataBody', formData: formData };
+    };
+
+    var blobPart = function(name, fileName, blob) {
+        return {
+            ctor: 'Blob',
+            _0: name,
+            _1: {
+                ctor: 'Just',
+                _0: fileName
+            },
+            _2: blob
+        }
+    };
+
     return {
         readAsTextFile : readAsTextFile,
         readAsArrayBuffer : readAsArrayBuffer,
-        readAsDataUrl: readAsDataUrl
+        readAsDataUrl: readAsDataUrl,
+        multipart: multipart,
+        blobPart: F3(blobPart)
     };
 };
