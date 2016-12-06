@@ -12,8 +12,10 @@ import DragDrop exposing (Msg(Drop), dragDropEventHandlers)
 
 type alias Model =
     { message : String
-    , dropZone : DragDrop.HoverState
-    , files : List NativeFile
+    , dropZone :
+        DragDrop.HoverState
+        -- , files : List NativeFile
+    , files : List Json.Value
     , contents : List String
     }
 

@@ -5,17 +5,13 @@
 
 module DragDrop
     exposing
-        ( HoverState(..)
-        , Msg(Drop)
-        , init
-        , update
-        , dragDropEventHandlers
+        ( ..
         )
 
 -- import Effects exposing (Effects)
 
 import Html exposing (Attribute)
-import Html.Events exposing (onWithOptions)
+import Html.Events exposing (..)
 import Json.Decode as Json
 import FileReader exposing (parseDroppedFiles, NativeFile)
 
@@ -36,66 +32,71 @@ type alias Model =
 -- set to Hovering if the user is hovering with content over the drop zone
 
 
-init : Model
-init =
-    Normal
+-- init : Model
+-- init =
+--     Normal
 
 
 
--- UPDATE
+-- -- UPDATE
 
 
-type Msg
-    = DragEnter
-      -- user enters the drop zone while dragging something
-    | DragLeave
-      -- user leaves drop zone
-    | Drop (List NativeFile)
+-- type Msg
+--     = DragEnter
+--       -- user enters the drop zone while dragging something
+--     | DragLeave
+--       -- user leaves drop zone
+--       -- | Drop (List NativeFile)
+--     | Drop (List Json.Value)
 
 
-update : Msg -> Model -> Model
-update msg model =
-    case msg of
-        DragEnter ->
-            Hovering
+-- update : Msg -> Model -> Model
+-- update msg model =
+--     case msg of
+--         DragEnter ->
+--             Hovering
 
-        DragLeave ->
-            Normal
+--         DragLeave ->
+--             Normal
 
-        Drop files ->
-            Normal
+--         Drop files ->
+--             Normal
 
 
 
 -- View event handlers
 
 
-dragDropEventHandlers : List (Attribute Msg)
-dragDropEventHandlers =
-    [ onDragEnter DragEnter
-    , onDragLeave DragLeave
-    , onDragOver DragEnter
-    , onDrop
-    ]
+-- dragDropEventHandlers : List (Attribute Msg)
+-- dragDropEventHandlers =
+--     [ onDragEnter DragEnter
+--     , onDragLeave DragLeave
+--     , onDragOver DragEnter
+--     , onDrop Drop
+--     ]
 
 
 
 -- Individual handler functions
+defs : Options
+defs = { stopPropagation = False, preventDefault = True }
 
-
-onDragFunctionIgnoreFiles : String -> a -> Attribute a
-onDragFunctionIgnoreFiles nativeEventName action =
+onDragFunctionIgnoreFiles : String -> msg -> Attribute msg
+onDragFunctionIgnoreFiles nativeEventName message =
     onWithOptions
         nativeEventName
         { stopPropagation = False, preventDefault = True }
-        (Json.map (\_ -> action) Json.value)
+        (Json.map (\_ -> message) Json.value)
 
 
-onDragFunctionDecodeFiles : String -> (List NativeFile -> Msg) -> Attribute Msg
+
+-- onDragFunctionDecodeFiles : String -> (List NativeFile -> Msg) -> Attribute Msg
+
+
 onDragFunctionDecodeFiles nativeEventName actionCreator =
     onWithOptions
-        nativeEventName
-        { stopPropagation = True, preventDefault = True }
+        nativeEventName         defs
+        -- (Json.map actionCreator (Json.list Json.value))
         (Json.map actionCreator parseDroppedFiles)
 
 
@@ -114,6 +115,6 @@ onDragLeave =
     onDragFunctionIgnoreFiles "dragleave"
 
 
-onDrop : Attribute Msg
+-- onDrop : (List Json.Value -> a) -> Attribute a
 onDrop =
-    onDragFunctionDecodeFiles "drop" (\files -> Drop files)
+    onDragFunctionDecodeFiles "drop"

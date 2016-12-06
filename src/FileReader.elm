@@ -11,11 +11,7 @@ module FileReader
         , prettyPrint
         , parseSelectedFiles
         , parseDroppedFiles
-<<<<<<< HEAD
-        , multipartBody
-        , blobPart
-=======
->>>>>>> master
+        , filePart
         )
 
 {-| Elm bindings for the main [HTML5 FileReader APIs](https://developer.mozilla.org/en/docs/Web/API/FileReader):
@@ -38,6 +34,9 @@ together with a set of examples.
 @docs parseSelectedFiles, parseDroppedFiles
 -}
 
+-- , multipartBody
+-- , blobPart
+
 import Native.FileReader
 import Http exposing (Part, Body)
 import Task exposing (Task, fail)
@@ -52,6 +51,7 @@ import Json.Decode
         , succeed
         , map
         , map4
+        , list
         , string
         , int
         , null
@@ -62,14 +62,20 @@ import Json.Decode
 import MimeType
 
 
-multipartBody : List Part -> Body
-multipartBody =
-    Native.FileReader.multipart
+-- multipartBody : List Part -> Body
+-- multipartBody =
+--     Native.FileReader.multipart
+--
+--
+-- blobPart : String -> String -> FileContentArrayBuffer -> Part
+-- blobPart =
+--     -- blobPart : String -> String -> NativeFile -> Part
+--     Native.FileReader.blobPart
+-- filePart : String -> FileContentArrayBuffer -> Part
 
 
-blobPart : String -> String -> FileContentArrayBuffer -> Part
-blobPart =
-    Native.FileReader.blobPart
+filePart =
+    Native.FileReader.filePart
 
 
 {-| A FileRef (or Blob) is a Elm Json Value.
@@ -204,9 +210,16 @@ Returns a list of files.
             (\vals -> Signal.message address (actionCreator vals))
 
 -}
+
+
+
 parseDroppedFiles : Decoder (List NativeFile)
 parseDroppedFiles =
     fileParser "dataTransfer"
+
+
+-- parseDroppedFiles =
+--     at [ "dataTransfer", "files" ] (list value)
 
 
 
@@ -249,13 +262,6 @@ isTextFile fileRef =
 fileParser : String -> Decoder (List NativeFile)
 fileParser fieldName =
     at
-<<<<<<< HEAD
-        [ field, "files" ]
-    <|
-        map (List.filterMap snd) (keyValuePairs <| maybe nativeFile)
-
-
-=======
         [ fieldName, "files" ]
     <|
         map (List.filterMap Tuple.second) (keyValuePairs <| maybe nativeFileDecoder)
@@ -263,28 +269,11 @@ fileParser fieldName =
 
 {-| mime type: parsed as string and then converted to a MimeType
 -}
->>>>>>> master
 mtypeDecoder : Decoder (Maybe MimeType.MimeType)
 mtypeDecoder =
     map MimeType.parseMimeType (field "type" string)
 
 
-<<<<<<< HEAD
-
-
-{- mime type: parsed as string and then converted to a MimeType
-   blob: the whole JS File object as a Json.Value so we can pass
-   it to a library that reads the content with a native FileReader
--}
-
-
-nativeFile : Decoder NativeFile
-nativeFile =
-    object4
-        NativeFile
-        ("name" := string)
-        ("size" := int)
-=======
 {-| blob: the whole JS File object as a Json.Value so we can pass
    it to a library that reads the content with a native FileReader
 -}
@@ -293,6 +282,5 @@ nativeFileDecoder =
     map4 NativeFile
         (field "name" string)
         (field "size" int)
->>>>>>> master
         mtypeDecoder
         value
