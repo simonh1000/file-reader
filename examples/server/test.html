@@ -1,0 +1,70 @@
+<html>
+
+<head>
+    <style>
+        #dropzone {
+            background-color: #eee;
+            height: 200px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <h1>Test</h1>
+    <div id="dropzone"></div>
+    <button id="submit">Submit</button>
+    <div id="output"></div>
+
+    <script>
+    var files;
+    var formdata = new FormData()
+
+    // var dz = document.querySelector('#dropzone');
+    var dz = document.getElementById('dropzone');
+    var submit = document.querySelector('#submit');
+    var output = document.querySelector('#output');
+
+    dz.addEventListener('dragenter', evt => evt.preventDefault());
+    dz.addEventListener('dragover', evt => evt.preventDefault());
+
+    dz.addEventListener('drop', evt => {
+        evt.preventDefault();
+        // evt.stopPropagation();
+
+        files = evt.dataTransfer.files;
+        // console.log(dt);
+        output.innerText = files[0].name;
+    });
+
+    submit.addEventListener('click', evt => {
+        // console.log(evt);
+        let file = files[0]; 
+        var formdata = new FormData()
+        // formdata.append('test', 'file');
+        formdata.append('simtest', file);
+ 
+            // "Content-Type": "multipart/form-data",
+        var myHeaders = new Headers({
+        });
+
+        var myInit = { 
+            method: 'POST',
+            body: formdata
+        };
+ 
+        fetch('http://localhost:5000/upload', myInit)
+        .then(function(response) {
+            if (response.status >= 400) {
+                throw new Error("Bad response from server");
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            console.log(data);
+        });
+    });
+</script>
+</body>
+
+</html>
