@@ -3,10 +3,7 @@
 -}
 
 
-module DragDrop
-    exposing
-        ( ..
-        )
+module DragDrop exposing (..)
 
 -- import Effects exposing (Effects)
 
@@ -30,17 +27,10 @@ type alias Model =
 
 
 -- set to Hovering if the user is hovering with content over the drop zone
-
-
 -- init : Model
 -- init =
 --     Normal
-
-
-
 -- -- UPDATE
-
-
 -- type Msg
 --     = DragEnter
 --       -- user enters the drop zone while dragging something
@@ -48,25 +38,16 @@ type alias Model =
 --       -- user leaves drop zone
 --       -- | Drop (List NativeFile)
 --     | Drop (List Json.Value)
-
-
 -- update : Msg -> Model -> Model
 -- update msg model =
 --     case msg of
 --         DragEnter ->
 --             Hovering
-
 --         DragLeave ->
 --             Normal
-
 --         Drop files ->
 --             Normal
-
-
-
 -- View event handlers
-
-
 -- dragDropEventHandlers : List (Attribute Msg)
 -- dragDropEventHandlers =
 --     [ onDragEnter DragEnter
@@ -74,12 +55,13 @@ type alias Model =
 --     , onDragOver DragEnter
 --     , onDrop Drop
 --     ]
-
-
-
 -- Individual handler functions
+
+
 defs : Options
-defs = { stopPropagation = False, preventDefault = True }
+defs =
+    { stopPropagation = False, preventDefault = True }
+
 
 onDragFunctionIgnoreFiles : String -> msg -> Attribute msg
 onDragFunctionIgnoreFiles nativeEventName message =
@@ -95,7 +77,8 @@ onDragFunctionIgnoreFiles nativeEventName message =
 
 onDragFunctionDecodeFiles nativeEventName actionCreator =
     onWithOptions
-        nativeEventName         defs
+        nativeEventName
+        defs
         -- (Json.map actionCreator (Json.list Json.value))
         (Json.map actionCreator parseDroppedFiles)
 
@@ -115,6 +98,9 @@ onDragLeave =
     onDragFunctionIgnoreFiles "dragleave"
 
 
+
 -- onDrop : (List Json.Value -> a) -> Attribute a
+
+
 onDrop =
     onDragFunctionDecodeFiles "drop"

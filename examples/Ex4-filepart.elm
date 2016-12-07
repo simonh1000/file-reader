@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Html exposing (Html, div, input, button, h1, p, text)
 import Html.Attributes exposing (type_, id, style)
-import Html.Events exposing (onClick, on)
+import Html.Events exposing (onClick, on, onInput)
 import Json.Decode as Json exposing (Value, andThen)
 import Http exposing (..)
 import Task exposing (Task)
@@ -16,18 +16,16 @@ import FileReader exposing (..)
 
 type alias Model =
     { message : String
-    , files :
-        List NativeFile
-        -- , files : List Json.Value
-    , contents : List String
+    , dnd : Int
+    , files : List NativeFile
     }
 
 
 init : Model
 init =
     { message = "Waiting..."
+    , dnd = 0
     , files = []
-    , contents = []
     }
 
 
@@ -39,10 +37,10 @@ type Msg
     = DragEnter
     | DragOver
     | DragLeave
-      -- | Drop (List Json.Value)
     | Drop (List NativeFile)
+    | FilesSelect (List NativeFile)
     | Submit
-    | FileData (Result FileReader.Error FileContentArrayBuffer)
+      -- | FileData (Result FileReader.Error FileContentArrayBuffer)
     | PostResult (Result Http.Error Json.Value)
 
 
@@ -50,16 +48,16 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
         DragEnter ->
-            model ! []
+            { model | dnd = model.dnd + 1 } ! []
 
         DragOver ->
             model ! []
 
         DragLeave ->
-            model ! []
+            { model | dnd = model.dnd - 1 } ! []
 
         Drop files ->
-            { model | files = files } ! []
+            { model | dnd = 0, files = files } ! []
 
         Submit ->
             case L.head model.files of
@@ -69,19 +67,14 @@ update message model =
                 Nothing ->
                     model ! []
 
-        FileData (Result.Ok buf) ->
-            model ! []
+        FilesSelect fileInstances ->
+            { model | files = fileInstances } ! []
 
-        -- model ! [ sendFileToServer buf ]
-        FileData (Result.Err err) ->
-            { model | message = FileReader.prettyPrint err } ! []
+        PostResult (Ok msg) ->
+            { model | message = toString msg } ! []
 
-        _ ->
-            let
-                _ =
-                    Debug.log "PostResult" message
-            in
-                model ! []
+        PostResult (Err err) ->
+            { model | message = toString err } ! []
 
 
 
@@ -92,12 +85,16 @@ view : Model -> Html Msg
 view model =
     div [ containerStyles ]
         [ h1 [] [ text "Drag 'n Drop" ]
+        , input
+            [ type_ "file"
+            , onchange FilesSelect
+            ]
+            []
         , renderDropZone model
         , button
             [ onClick Submit ]
             [ text "Submit" ]
         , div [] [ text <| "Files: " ++ commaSeperate (List.map .name model.files) ]
-        , div [] [ text <| "Content: " ++ commaSeperate model.contents ]
         , p [] [ text model.message ]
         ]
 
@@ -108,50 +105,48 @@ commaSeperate lst =
 
 
 renderDropZone : Model -> Html Msg
-renderDropZone m =
+renderDropZone model =
     div
-        (renderZoneAttributes m)
-        [ text "drop here" ]
+        (renderZoneAttributes model)
+        [ text "Drop here" ]
 
 
 renderZoneAttributes : Model -> List (Html.Attribute Msg)
-renderZoneAttributes _ =
-    dropZoneDefault
+renderZoneAttributes { dnd } =
+    (case dnd of
+        0 ->
+            dropZoneDefault
+
+        _ ->
+            dropZoneHover
+    )
         :: [ onDragEnter DragEnter
-           , onDragOver DragEnter
+           , onDragOver DragOver
            , onDragLeave DragLeave
            , onDrop Drop
            ]
 
 
+onchange action =
+    on "change" (Json.map action parseSelectedFiles)
 
--- case hoverState of
---     DragDrop.Normal ->
---         dropZoneDefault :: dragDropEventHandlers
---     DragDrop.Hovering ->
---         dropZoneHover :: dragDropEventHandlers
+
+
 -- TASKS
+-- readFile : FileRef -> Cmd Msg
+-- readFile fileValue =
+--     readAsArrayBuffer fileValue
+--         |> Task.attempt FileData
 
 
-readFile : FileRef -> Cmd Msg
-readFile fileValue =
-    readAsArrayBuffer fileValue
-        |> Task.attempt FileData
-
-
-
--- sendFileToServer : FileContentArrayBuffer -> Cmd Msg
-
-
+sendFileToServer : NativeFile -> Cmd Msg
 sendFileToServer buf =
     let
         body =
             Http.multipartBody
                 [ stringPart "part1" "42"
-                  -- , FileReader.blobPart "test" "testname.png" buf
                 , FileReader.filePart "simtest" buf
                 ]
-                |> Debug.log "body"
     in
         Http.post "http://localhost:5000/upload" body Json.value
             |> Http.send PostResult

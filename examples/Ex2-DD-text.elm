@@ -3,8 +3,9 @@ module Main exposing (..)
 import Html exposing (Html, div, input, button, h1, p, text)
 import Html.Attributes exposing (type_, id, style)
 import Task
+import Json.Decode as Json
 import FileReader exposing (FileRef, NativeFile, readAsTextFile, Error(..))
-import DragDrop exposing (Msg(Drop), dragDropEventHandlers)
+import DragDropModel as DragDrop exposing (Msg(Drop), dragDropEventHandlers)
 
 
 -- MODEL
@@ -12,10 +13,8 @@ import DragDrop exposing (Msg(Drop), dragDropEventHandlers)
 
 type alias Model =
     { message : String
-    , dropZone :
-        DragDrop.HoverState
-        -- , files : List NativeFile
-    , files : List Json.Value
+    , dropZone : DragDrop.HoverState
+    , files : List NativeFile
     , contents : List String
     }
 

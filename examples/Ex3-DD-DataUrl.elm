@@ -5,7 +5,7 @@ import Html.Attributes exposing (..)
 import Task
 import FileReader exposing (..)
 import MimeType exposing (MimeType(..))
-import DragDrop exposing (Msg(Drop), dragDropEventHandlers, HoverState(..))
+import DragDropModel as DragDrop exposing (Msg(Drop), dragDropEventHandlers, HoverState(..))
 
 
 type alias Model =

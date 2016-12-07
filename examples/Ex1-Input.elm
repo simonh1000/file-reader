@@ -69,9 +69,7 @@ view : Model -> Html Msg
 view model =
     div [ containerStyles ]
         [ div []
-            [ h1
-                []
-                [ text "Single file select + Upload separate" ]
+            [ h1 [] [ text "Single file select + Upload separate" ]
             , input
                 [ type_ "file"
                 , onchange FilesSelect
@@ -79,12 +77,10 @@ view model =
                 []
             , button
                 [ onClick Upload ]
-                [ text "Upload" ]
+                [ text "Read file" ]
             ]
         , div []
-            [ h1
-                []
-                [ text "Multiple files with automatic upload" ]
+            [ h1 [] [ text "Multiple files with automatic upload" ]
             , input
                 [ type_ "file"
                 , onchange FilesSelectUpload
@@ -93,8 +89,7 @@ view model =
                 []
             ]
         , form
-            [ onSubmit Submit
-            ]
+            [ onSubmit Submit ]
             [ h1 [] [ text "Form with submit button" ]
             , input
                 [ type_ "file"
@@ -107,8 +102,7 @@ view model =
                 [ text "Submit" ]
             ]
         , div []
-            [ h1 []
-                [ text "Results" ]
+            [ h1 [] [ text "Results" ]
             , p []
                 [ text <|
                     "Files: "
@@ -119,8 +113,7 @@ view model =
                     "Contents: "
                         ++ commaSeperate model.contents
                 ]
-            , div []
-                [ text model.message ]
+            , div [] [ text model.message ]
             ]
         ]
 
@@ -133,7 +126,7 @@ commaSeperate lst =
 onchange action =
     on
         "change"
-        (Json.map (\v -> action v) parseSelectedFiles)
+        (Json.map action parseSelectedFiles)
 
 
 containerStyles =
@@ -147,12 +140,13 @@ containerStyles =
 readTextFile : NativeFile -> Cmd Msg
 readTextFile fileValue =
     readAsTextFile fileValue.blob
-        |> Task.map Ok
-        |> Task.onError (Task.succeed << Err)
-        |> Task.perform FileData
+        |> Task.attempt FileData
 
 
 
+-- |> Task.map Ok
+-- |> Task.onError (Task.succeed << Err)
+-- |> Task.perform FileData
 -- ----------------------------------
 
 
