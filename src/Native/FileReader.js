@@ -46,53 +46,12 @@ var _user$project$Native_FileReader = function() {
         return useReader("readAsDataURL", fileObjectToRead);
     };
 
-    // var multipart = function(dataList)
-    // {
-    // 	var formData = new FormData();
-
-    // 	while (dataList.ctor !== '[]')
-    // 	{
-    // 		var data = dataList._0;
-    // 		if (data.ctor === 'StringPart')
-    // 		{
-    // 			formData.append(data._0, data._1);
-    // 		}
-    // 		else
-    // 		{
-    // 			var fileName = data._1.ctor === 'Nothing'
-    // 				? undefined
-    // 				: data._1._0;
-    // 			formData.append(data._0, data._2, fileName);
-    //             // formData.append(name, value, filename);
-    // 		}
-    // 		dataList = dataList._1;
-    // 	}
-    //     console.log({ ctor: 'FormDataBody', _0: formData });
-    // 	return { ctor: 'FormDataBody', _0: formData };
-    // };
-
-    // var blobPart = function(name, fileName, blob) {
-    //     return {
-    //         ctor: 'Blob',
-    //         _0: name,
-    //         _1: {
-    //             ctor: 'Just',
-    //             _0: fileName
-    //         },
-    //         _2: blob
-    //     }
-    // };
-
-    var filePart = function(name, fileAsArray) {
+    var filePart = function(name, blob) {
         return {
             _0: name,
-            // _1: fileAsArray
-            _1: new Blob([fileAsArray], {type: "image/png"} )
+            _1: blob
         }
     };
-
-    // multipart: multipart,
-    // blobPart: F3(blobPart),
 
     return {
         readAsTextFile : readAsTextFile,

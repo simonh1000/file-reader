@@ -62,22 +62,6 @@ import Json.Decode
 import MimeType
 
 
--- multipartBody : List Part -> Body
--- multipartBody =
---     Native.FileReader.multipart
---
---
--- blobPart : String -> String -> FileContentArrayBuffer -> Part
--- blobPart =
---     -- blobPart : String -> String -> NativeFile -> Part
---     Native.FileReader.blobPart
--- filePart : String -> FileContentArrayBuffer -> Part
-
-
-filePart =
-    Native.FileReader.filePart
-
-
 {-| A FileRef (or Blob) is a Elm Json Value.
 -}
 type alias FileRef =
@@ -147,6 +131,13 @@ readAsDataUrl =
     Native.FileReader.readAsDataUrl
 
 
+{-| Creates an Http.Part from a NativeFile, to support uploading of binary files using multipart.
+-}
+filePart : String -> NativeFile -> Part
+filePart name nf =
+    Native.FileReader.filePart name nf.blob
+
+
 {-| Pretty print FileReader errors.
 
     prettyPrint ReadFail   -- == "File reading error"
@@ -210,19 +201,14 @@ Returns a list of files.
             (\vals -> Signal.message address (actionCreator vals))
 
 -}
-
-
-
 parseDroppedFiles : Decoder (List NativeFile)
 parseDroppedFiles =
     fileParser "dataTransfer"
 
 
+
 -- parseDroppedFiles =
 --     at [ "dataTransfer", "files" ] (list value)
-
-
-
 {- UN-EXPORTED HELPERS -}
 -- Used by readAsText
 -- defaults to True if format not recognised
