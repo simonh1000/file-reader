@@ -10,6 +10,8 @@ FileReader has three main methods (see [MDN](https://developer.mozilla.org/en/do
 
 The module also provides helper Elm decoders for `change` events on `<Input type="file">` and `drop` events, together with a set of examples.
 
+**New for Elm 0.18:** An additional native code function has been added to enable multipart form uploads of binary data - see 
+
 ## Installation
 
 ### [elm-github-install](https://github.com/gdotdesign/elm-github-install)

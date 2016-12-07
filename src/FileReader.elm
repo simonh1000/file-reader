@@ -27,6 +27,9 @@ together with a set of examples.
 # API functions
 @docs readAsTextFile, readAsArrayBuffer, readAsDataUrl
 
+# Multi-part support
+@docs filePart
+
 # Helper aliases
 @docs NativeFile, FileRef, FileContentArrayBuffer, FileContentDataUrl, Error, prettyPrint
 
