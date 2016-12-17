@@ -37,9 +37,6 @@ together with a set of examples.
 @docs parseSelectedFiles, parseDroppedFiles
 -}
 
--- , multipartBody
--- , blobPart
-
 import Native.FileReader
 import Http exposing (Part, Body)
 import Task exposing (Task, fail)
@@ -117,8 +114,8 @@ be represented as a Json.Value to Elm.
     readAsArrayBuffer ref
 -}
 readAsArrayBuffer : FileRef -> Task Error FileContentArrayBuffer
-readAsArrayBuffer =
-    Native.FileReader.readAsArrayBuffer
+readAsArrayBuffer fileRef =
+    Native.FileReader.readAsArrayBuffer fileRef
 
 
 {-| Takes a "File" or "Blob" JS object as a Json.Value
@@ -130,8 +127,8 @@ be represented as a Json.Value to Elm.
     readAsDataUrl ref
 -}
 readAsDataUrl : FileRef -> Task Error FileContentDataUrl
-readAsDataUrl =
-    Native.FileReader.readAsDataUrl
+readAsDataUrl fileRef =
+    Native.FileReader.readAsDataUrl fileRef
 
 
 {-| Creates an Http.Part from a NativeFile, to support uploading of binary files using multipart.
