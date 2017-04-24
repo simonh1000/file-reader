@@ -203,17 +203,16 @@ Returns a list of files.
 -}
 parseDroppedFiles : Decoder (List NativeFile)
 parseDroppedFiles =
+    --     at [ "dataTransfer", "files" ] (list value)
     fileParser "dataTransfer"
 
 
 
--- parseDroppedFiles =
---     at [ "dataTransfer", "files" ] (list value)
-{- UN-EXPORTED HELPERS -}
--- Used by readAsText
--- defaults to True if format not recognised
+-- UN-EXPORTED HELPERS
 
 
+{-| -- Used by readAsText, defaults to True if format not recognised
+-}
 isTextFile : FileRef -> Bool
 isTextFile fileRef =
     case decodeValue mtypeDecoder fileRef of

@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Ex1Input exposing (..)
 
 import Html exposing (Html, div, input, button, h1, p, text, form)
 import Html.Attributes exposing (type_, id, style, multiple)

@@ -7,7 +7,7 @@ var _simonh1000$file_reader$Native_FileReader = function() {
         return scheduler.nativeBinding(function(callback){
 
             /*
-             * Test for existence of FileRader using
+             * Test for existence of FileReader using
              * if(window.FileReader) { ...
              * http://caniuse.com/#search=filereader
              * main gap is IE10 and 11 which do not support readAsBinaryFile

@@ -22,6 +22,9 @@ A great tool to install native-code based Elm libraries
 
 Note in particular that you need to add `"native-modules": true,` to your elm-package.json file as is done in the examples.
 
+## examples
+
+If you want to try the examples, you will need to edit src/Native/FileReader.js to replace the comments in the first two lines.
 
 ## Disclaimer
 
