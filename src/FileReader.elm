@@ -45,16 +45,11 @@ import Json.Decode
         ( Decoder
         , decodeValue
         , field
-        , andThen
         , at
-        , oneOf
-        , succeed
         , map
         , map4
-        , list
         , string
         , int
-        , null
         , value
         , maybe
         , keyValuePairs
