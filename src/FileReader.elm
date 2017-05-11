@@ -12,6 +12,7 @@ module FileReader
         , parseSelectedFiles
         , parseDroppedFiles
         , filePart
+        , rawBody
         )
 
 {-| Elm bindings for the main [HTML5 FileReader APIs](https://developer.mozilla.org/en/docs/Web/API/FileReader):
@@ -137,7 +138,12 @@ filePart : String -> NativeFile -> Part
 filePart name nf =
     Native.FileReader.filePart name nf.blob
 
-
+{-| Creates an Http.Body from a NativeFile, to support uploading of binary files without using multipart.
+-}
+rawBody : String -> NativeFile -> Body
+rawBody mimeType nf =
+    Native.FileReader.rawBody mimeType nf.blob
+    
 {-| Pretty print FileReader errors.
 
     prettyPrint ReadFail   -- == "File reading error"
