@@ -54,10 +54,19 @@ var _simonh1000$file_reader$Native_FileReader = function() {
         }
     };
 
+    var rawBody = function (mimeType, blob) {
+        return {
+            ctor: "StringBody",
+            _0: mimeType,
+            _1: blob
+        };
+    };
+    
     return {
         readAsTextFile : readAsTextFile,
         readAsArrayBuffer : readAsArrayBuffer,
         readAsDataUrl: readAsDataUrl,
-        filePart: F2(filePart)
+        filePart: F2(filePart),
+        rawBody: F2(rawBody)
     };
 }();
