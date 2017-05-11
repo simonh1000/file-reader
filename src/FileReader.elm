@@ -142,7 +142,7 @@ filePart name nf =
 -}
 rawBody : String -> NativeFile -> Body
 rawBody mimeType nf =
-    Native.FileReader.filePart mimeType nf.blob
+    Native.FileReader.rawBody mimeType nf.blob
     
 {-| Pretty print FileReader errors.
 
