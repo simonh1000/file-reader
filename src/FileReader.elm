@@ -51,6 +51,7 @@ import Json.Decode
         , oneOf
         , succeed
         , map
+        , map2
         , map4
         , list
         , string
@@ -138,12 +139,14 @@ filePart : String -> NativeFile -> Part
 filePart name nf =
     Native.FileReader.filePart name nf.blob
 
+
 {-| Creates an Http.Body from a NativeFile, to support uploading of binary files without using multipart.
 -}
 rawBody : String -> NativeFile -> Body
 rawBody mimeType nf =
     Native.FileReader.rawBody mimeType nf.blob
-    
+
+
 {-| Pretty print FileReader errors.
 
     prettyPrint ReadFail   -- == "File reading error"
@@ -252,10 +255,24 @@ isTextFile fileRef =
 
 fileParser : String -> Decoder (List NativeFile)
 fileParser fieldName =
-    at
-        [ fieldName, "files" ]
-    <|
-        map (List.filterMap Tuple.second) (keyValuePairs <| maybe nativeFileDecoder)
+    field fieldName <|
+        field "files" <|
+            fileListDecoder nativeFileDecoder
+
+
+{-| Apply a decoder to each file in the FileList, in order.
+-}
+fileListDecoder : Decoder a -> Decoder (List a)
+fileListDecoder decoder =
+    let
+        decodeFileValues indexes =
+            indexes
+                |> List.map (\index -> field (toString index) decoder)
+                |> List.foldr (map2 (::)) (succeed [])
+    in
+        field "length" int
+            |> map (\i -> List.range 0 (i - 1))
+            |> andThen decodeFileValues
 
 
 {-| mime type: parsed as string and then converted to a MimeType
