@@ -1,5 +1,5 @@
-// var _user$project$Native_FileReader = function() {
-var _simonh1000$file_reader$Native_FileReader = function() {
+var _user$project$Native_FileReader = function() {
+// var _simonh1000$file_reader$Native_FileReader = function() {
 
     var scheduler = _elm_lang$core$Native_Scheduler;
 
@@ -28,7 +28,14 @@ var _simonh1000$file_reader$Native_FileReader = function() {
                 return callback(scheduler.fail({ctor : 'NoValidBlob'}));
             }
 
-            return reader[method](fileObjectToRead);
+            if (reader[method]) {
+                const result = reader[method](fileObjectToRead);
+                fileObjectToRead = null;
+                return result;
+                // return reader[method](fileObjectToRead);
+            } else {
+                return callback(scheduler.fail({ctor : 'ReadFail'}));
+            }
         });
     }
 
