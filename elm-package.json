@@ -1,5 +1,5 @@
 {
-    "version": "1.2.0",
+    "version": "1.2.1",
     "summary": "Elm bindings for HTML5 FileReader API",
     "repository": "https://github.com/simonh1000/file-reader.git",
     "license": "BSD3",
