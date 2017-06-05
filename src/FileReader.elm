@@ -25,17 +25,26 @@ The module also provides helper Json Decoders for the files values on
 `<Input type="file">` `change` events, and on `drop` events,
 together with a set of examples.
 
+
 # API functions
+
 @docs readAsTextFile, readAsArrayBuffer, readAsDataUrl
 
+
 # Multi-part support
+
 @docs filePart
 
+
 # Helper aliases
+
 @docs NativeFile, FileRef, FileContentArrayBuffer, FileContentDataUrl, Error, prettyPrint
 
+
 # Helper Json Decoders
+
 @docs parseSelectedFiles, parseDroppedFiles
+
 -}
 
 import Native.FileReader
@@ -78,9 +87,10 @@ type alias FileContentDataUrl =
 
 {-| FileReader can fail in the following cases:
 
- - the File reference / blob passed in was not valid
- - an native error occurs during file reading
- - readAsTextFile is passed a FileRef that does not have a text format (unrecognised formats are read)
+  - the File reference / blob passed in was not valid
+  - an native error occurs during file reading
+  - readAsTextFile is passed a FileRef that does not have a text format (unrecognised formats are read)
+
 -}
 type Error
     = NoValidBlob
@@ -93,6 +103,7 @@ format, returns a task that reads the file as a text file. The Success value is
 represented as a String to Elm.
 
     readAsTextFile ref
+
 -}
 readAsTextFile : FileRef -> Task Error String
 readAsTextFile fileRef =
@@ -108,6 +119,7 @@ The ArrayBuffer value returned in the Success case of the Task will
 be represented as a Json.Value to Elm.
 
     readAsArrayBuffer ref
+
 -}
 readAsArrayBuffer : FileRef -> Task Error FileContentArrayBuffer
 readAsArrayBuffer fileRef =
@@ -121,6 +133,7 @@ The DataURL value returned in the Success case of the Task will
 be represented as a Json.Value to Elm.
 
     readAsDataUrl ref
+
 -}
 readAsDataUrl : FileRef -> Task Error FileContentDataUrl
 readAsDataUrl fileRef =
@@ -133,15 +146,18 @@ filePart : String -> NativeFile -> Part
 filePart name nf =
     Native.FileReader.filePart name nf.blob
 
+
 {-| Creates an Http.Body from a NativeFile, to support uploading of binary files without using multipart.
 -}
 rawBody : String -> NativeFile -> Body
 rawBody mimeType nf =
     Native.FileReader.rawBody mimeType nf.blob
-    
+
+
 {-| Pretty print FileReader errors.
 
     prettyPrint ReadFail   -- == "File reading error"
+
 -}
 prettyPrint : Error -> String
 prettyPrint err =
@@ -166,6 +182,7 @@ needed to read the file.
         , mimeType : Maybe MimeType.MimeType
         , blob : Value
         }
+
 -}
 type alias NativeFile =
     { name : String
@@ -184,6 +201,7 @@ Returns a list of files.
             "change"
             parseSelectedFiles
             (\vals -> Signal.message address (actionCreator vals))
+
 -}
 parseSelectedFiles : Decoder (List NativeFile)
 parseSelectedFiles =
@@ -197,7 +215,7 @@ Returns a list of files.
     ondrop actionCreator address =
         onWithOptions
             "drop"
-            {stopPropagation = True, preventDefault = True}
+            { stopPropagation = True, preventDefault = True }
             parseDroppedFiles
             (\vals -> Signal.message address (actionCreator vals))
 
@@ -261,7 +279,7 @@ mtypeDecoder =
 
 
 {-| blob: the whole JS File object as a Json.Value so we can pass
-   it to a library that reads the content with a native FileReader
+it to a library that reads the content with a native FileReader
 -}
 nativeFileDecoder : Decoder NativeFile
 nativeFileDecoder =
