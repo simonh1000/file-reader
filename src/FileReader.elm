@@ -57,6 +57,7 @@ import Json.Decode
         , field
         , at
         , map
+        , map2
         , map4
         , string
         , int
@@ -265,10 +266,24 @@ isTextFile fileRef =
 
 fileParser : String -> Decoder (List NativeFile)
 fileParser fieldName =
-    at
-        [ fieldName, "files" ]
-    <|
-        map (List.filterMap Tuple.second) (keyValuePairs <| maybe nativeFileDecoder)
+    field fieldName <|
+        field "files" <|
+            fileListDecoder nativeFileDecoder
+
+
+{-| Apply a decoder to each file in the FileList, in order.
+-}
+fileListDecoder : Decoder a -> Decoder (List a)
+fileListDecoder decoder =
+    let
+        decodeFileValues indexes =
+            indexes
+                |> List.map (\index -> field (toString index) decoder)
+                |> List.foldr (map2 (::)) (succeed [])
+    in
+        field "length" int
+            |> map (\i -> List.range 0 (i - 1))
+            |> andThen decodeFileValues
 
 
 {-| mime type: parsed as string and then converted to a MimeType
