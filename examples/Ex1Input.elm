@@ -49,7 +49,7 @@ update msg model =
                 ! []
 
         FilesSelectUpload fileInstances ->
-            { model | selected = fileInstances } ! List.map readTextFile fileInstances
+            { model | selected = fileInstances, contents = [] } ! List.map readTextFile fileInstances
 
         Submit ->
             { model | message = Basics.toString model.selected } ! List.map readTextFile model.selected
@@ -103,19 +103,15 @@ view model =
             ]
         , div []
             [ h1 [] [ text "Results" ]
-            , p []
-                [ text <|
-                    "Files: "
-                        ++ commaSeperate (List.map .name model.selected)
-                ]
-            , p []
-                [ text <|
-                    "Contents: "
-                        ++ commaSeperate model.contents
-                ]
-            , div [] [ text model.message ]
+            , div [ divStyles ] [ text <| "selected: " ++ commaSeperate (List.map .name model.selected) ]
+            , div [ divStyles ] [ text <| "Contents: " ++ commaSeperate model.contents ]
+            , div [ divStyles ] [ text <| "Message: " ++ model.message ]
             ]
         ]
+
+
+divStyles =
+    style [ ( "margin-bottom", "15px" ) ]
 
 
 commaSeperate : List String -> String
@@ -144,9 +140,6 @@ readTextFile fileValue =
 
 
 
--- |> Task.map Ok
--- |> Task.onError (Task.succeed << Err)
--- |> Task.perform FileData
 -- ----------------------------------
 
 
