@@ -50,40 +50,26 @@ together with a set of examples.
 import Native.FileReader
 import Http exposing (Part, Body)
 import Task exposing (Task, fail)
-import Json.Decode
-    exposing
-        ( Decoder
-        , decodeValue
-        , field
-        , at
-        , map
-        , map2
-        , map4
-        , string
-        , int
-        , value
-        , maybe
-        , keyValuePairs
-        )
+import Json.Decode as Json exposing (Decoder, Value)
 import MimeType
 
 
 {-| A FileRef (or Blob) is a Elm Json Value.
 -}
 type alias FileRef =
-    Json.Decode.Value
+    Value
 
 
 {-| An ArrayBuffer is a Elm Json Value.
 -}
 type alias FileContentArrayBuffer =
-    Json.Decode.Value
+    Value
 
 
 {-| A DataUrl is an Elm Json Value.
 -}
 type alias FileContentDataUrl =
-    Json.Decode.Value
+    Value
 
 
 {-| FileReader can fail in the following cases:
@@ -235,7 +221,7 @@ parseDroppedFiles =
 -}
 isTextFile : FileRef -> Bool
 isTextFile fileRef =
-    case decodeValue mtypeDecoder fileRef of
+    case Json.decodeValue mtypeDecoder fileRef of
         Result.Ok mimeVal ->
             case mimeVal of
                 Just mimeType ->
@@ -266,8 +252,8 @@ isTextFile fileRef =
 
 fileParser : String -> Decoder (List NativeFile)
 fileParser fieldName =
-    field fieldName <|
-        field "files" <|
+    Json.field fieldName <|
+        Json.field "files" <|
             fileListDecoder nativeFileDecoder
 
 
@@ -278,19 +264,19 @@ fileListDecoder decoder =
     let
         decodeFileValues indexes =
             indexes
-                |> List.map (\index -> field (toString index) decoder)
-                |> List.foldr (map2 (::)) (succeed [])
+                |> List.map (\index -> Json.field (toString index) decoder)
+                |> List.foldr (Json.map2 (::)) (Json.succeed [])
     in
-        field "length" int
-            |> map (\i -> List.range 0 (i - 1))
-            |> andThen decodeFileValues
+        Json.field "length" Json.int
+            |> Json.map (\i -> List.range 0 (i - 1))
+            |> Json.andThen decodeFileValues
 
 
 {-| mime type: parsed as string and then converted to a MimeType
 -}
 mtypeDecoder : Decoder (Maybe MimeType.MimeType)
 mtypeDecoder =
-    map MimeType.parseMimeType (field "type" string)
+    Json.map MimeType.parseMimeType (Json.field "type" Json.string)
 
 
 {-| blob: the whole JS File object as a Json.Value so we can pass
@@ -298,8 +284,8 @@ it to a library that reads the content with a native FileReader
 -}
 nativeFileDecoder : Decoder NativeFile
 nativeFileDecoder =
-    map4 NativeFile
-        (field "name" string)
-        (field "size" int)
+    Json.map4 NativeFile
+        (Json.field "name" Json.string)
+        (Json.field "size" Json.int)
         mtypeDecoder
-        value
+        Json.value
