@@ -7,6 +7,7 @@ module FileReader
         , Error(..)
         , readAsTextFile
         , readAsArrayBuffer
+        , readAsBase64
         , readAsDataUrl
         , prettyPrint
         , parseSelectedFiles
@@ -112,6 +113,10 @@ readAsArrayBuffer : FileRef -> Task Error FileContentArrayBuffer
 readAsArrayBuffer fileRef =
     Native.FileReader.readAsArrayBuffer fileRef
 
+
+readAsBase64 : FileRef -> Task Error String
+readAsBase64 fileRef =
+    Native.FileReader.readAsBase64 fileRef
 
 {-| Takes a "File" or "Blob" JS object as a Json.Value
 and starts a task to read the contents as an DataURL (so it can
