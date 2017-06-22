@@ -16,6 +16,12 @@ The module also provides helper Elm decoders for `change` events on `<Input type
 
 ### [elm-github-install](https://github.com/gdotdesign/elm-github-install)
 
+```
+(sudo) gem install elm_install
+<add  "simonh1000/file-reader": "1.0.0 <= v < 2.0.0" to the dependencies section of elm-package.json>
+elm-install
+```
+
 A great tool to install native-code based Elm libraries
 
 ### Manually

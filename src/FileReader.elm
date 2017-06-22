@@ -33,7 +33,7 @@ together with a set of examples.
 
 # Multi-part support
 
-@docs filePart
+@docs filePart, rawBody
 
 
 # Helper aliases

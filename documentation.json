@@ -1,0 +1,96 @@
+[
+  {
+    "name": "FileReader",
+    "comment": " Elm bindings for the main [HTML5 FileReader APIs](https://developer.mozilla.org/en/docs/Web/API/FileReader):\n\n    FileReaderInstance.readAsText();\n    FileReaderInstance.readAsArrayBuffer();\n    FileReaderInstance.readAsDataURL();\n\nThe module also provides helper Json Decoders for the files values on\n`<Input type=\"file\">` `change` events, and on `drop` events,\ntogether with a set of examples.\n\n\n# API functions\n\n@docs readAsTextFile, readAsArrayBuffer, readAsDataUrl\n\n\n# Multi-part support\n\n@docs filePart, rawBody\n\n\n# Helper aliases\n\n@docs NativeFile, FileRef, FileContentArrayBuffer, FileContentDataUrl, Error, prettyPrint\n\n\n# Helper Json Decoders\n\n@docs parseSelectedFiles, parseDroppedFiles\n\n",
+    "aliases": [
+      {
+        "name": "FileContentArrayBuffer",
+        "comment": " An ArrayBuffer is a Elm Json Value.\n",
+        "args": [],
+        "type": "Json.Decode.Value"
+      },
+      {
+        "name": "FileContentDataUrl",
+        "comment": " A DataUrl is an Elm Json Value.\n",
+        "args": [],
+        "type": "Json.Decode.Value"
+      },
+      {
+        "name": "FileRef",
+        "comment": " A FileRef (or Blob) is a Elm Json Value.\n",
+        "args": [],
+        "type": "Json.Decode.Value"
+      },
+      {
+        "name": "NativeFile",
+        "comment": " Helper type for interpreting the Files event value from Input and drag 'n drop.\nThe first three elements are useful meta data, while the fourth is the handle\nneeded to read the file.\n\n    type alias NativeFile =\n        { name : String\n        , size : Int\n        , mimeType : Maybe MimeType.MimeType\n        , blob : Value\n        }\n\n",
+        "args": [],
+        "type": "{ name : String , size : Int , mimeType : Maybe.Maybe MimeType.MimeType , blob : FileReader.FileRef }"
+      }
+    ],
+    "types": [
+      {
+        "name": "Error",
+        "comment": " FileReader can fail in the following cases:\n\n  - the File reference / blob passed in was not valid\n  - an native error occurs during file reading\n  - readAsTextFile is passed a FileRef that does not have a text format (unrecognised formats are read)\n\n",
+        "args": [],
+        "cases": [
+          [
+            "NoValidBlob",
+            []
+          ],
+          [
+            "ReadFail",
+            []
+          ],
+          [
+            "NotTextFile",
+            []
+          ]
+        ]
+      }
+    ],
+    "values": [
+      {
+        "name": "filePart",
+        "comment": " Creates an Http.Part from a NativeFile, to support uploading of binary files using multipart.\n",
+        "type": "String -> FileReader.NativeFile -> Http.Part"
+      },
+      {
+        "name": "parseDroppedFiles",
+        "comment": " Parse files selected using an HTML drop event.\nReturns a list of files.\n\n    ondrop : (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute\n    ondrop actionCreator address =\n        onWithOptions\n            \"drop\"\n            { stopPropagation = True, preventDefault = True }\n            parseDroppedFiles\n            (\\vals -> Signal.message address (actionCreator vals))\n\n",
+        "type": "Json.Decode.Decoder (List FileReader.NativeFile)"
+      },
+      {
+        "name": "parseSelectedFiles",
+        "comment": " Parse change event from an HTML input element with 'type=\"file\"'.\nReturns a list of files.\n\n    onchange : (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute\n    onchange address actionCreator =\n        on\n            \"change\"\n            parseSelectedFiles\n            (\\vals -> Signal.message address (actionCreator vals))\n\n",
+        "type": "Json.Decode.Decoder (List FileReader.NativeFile)"
+      },
+      {
+        "name": "prettyPrint",
+        "comment": " Pretty print FileReader errors.\n\n    prettyPrint ReadFail   -- == \"File reading error\"\n\n",
+        "type": "FileReader.Error -> String"
+      },
+      {
+        "name": "rawBody",
+        "comment": " Creates an Http.Body from a NativeFile, to support uploading of binary files without using multipart.\n",
+        "type": "String -> FileReader.NativeFile -> Http.Body"
+      },
+      {
+        "name": "readAsArrayBuffer",
+        "comment": " Takes a \"File\" or \"Blob\" JS object as a Json.Value\nand starts a task to read the contents as an ArrayBuffer.\nThe ArrayBuffer value returned in the Success case of the Task will\nbe represented as a Json.Value to Elm.\n\n    readAsArrayBuffer ref\n\n",
+        "type": "FileReader.FileRef -> Task.Task FileReader.Error FileReader.FileContentArrayBuffer"
+      },
+      {
+        "name": "readAsDataUrl",
+        "comment": " Takes a \"File\" or \"Blob\" JS object as a Json.Value\nand starts a task to read the contents as an DataURL (so it can\nbe assigned to the src property of an img e.g.).\nThe DataURL value returned in the Success case of the Task will\nbe represented as a Json.Value to Elm.\n\n    readAsDataUrl ref\n\n",
+        "type": "FileReader.FileRef -> Task.Task FileReader.Error FileReader.FileContentDataUrl"
+      },
+      {
+        "name": "readAsTextFile",
+        "comment": " Takes a \"File\" or \"Blob\" JS object as a Json.Value. If the File is a text\nformat, returns a task that reads the file as a text file. The Success value is\nrepresented as a String to Elm.\n\n    readAsTextFile ref\n\n",
+        "type": "FileReader.FileRef -> Task.Task FileReader.Error String"
+      }
+    ],
+    "generated-with-elm-version": "0.18.0"
+  }
+]
