@@ -1,5 +1,5 @@
-var _user$project$Native_FileReader = function() {
-// var _simonh1000$file_reader$Native_FileReader = function() {
+var _simonh1000$file_reader$Native_FileReader = function() {
+// var _user$project$Native_FileReader = function() {
 
     var scheduler = _elm_lang$core$Native_Scheduler;
 
@@ -68,7 +68,7 @@ var _user$project$Native_FileReader = function() {
             _1: blob
         };
     };
-    
+
     return {
         readAsTextFile : readAsTextFile,
         readAsArrayBuffer : readAsArrayBuffer,
