@@ -1,9 +1,9 @@
-var _user$project$Native_FileReader = function() {
-// var _simonh1000$file_reader$Native_FileReader = function() {
+// var _user$project$Native_FileReader = function() {
+var _outofboundstech$file_reader$Native_FileReader = function() {
 
     var scheduler = _elm_lang$core$Native_Scheduler;
 
-    function useReader(method, fileObjectToRead) {
+    function useReader(method, fileObjectToRead, as_base64=false) {
         return scheduler.nativeBinding(function(callback){
 
             /*
@@ -16,7 +16,12 @@ var _user$project$Native_FileReader = function() {
             var reader = new FileReader();
 
             reader.onload = function(evt) {
-                return callback(scheduler.succeed(evt.target.result));
+                if (as_base64) {
+                    var uint8 = new Uint8Array(evt.target.result);
+                    return callback(scheduler.succeed(base64.fromByteArray(uint8)));
+                } else {
+                    return callback(scheduler.succeed(evt.target.result));
+                }
             };
 
             reader.onerror = function() {
@@ -49,6 +54,11 @@ var _user$project$Native_FileReader = function() {
         return useReader("readAsArrayBuffer", fileObjectToRead);
     };
 
+    // readAsArrayBuffer : Value -> Task error String
+    var readAsBase64 = function(fileObjectToRead){
+        return useReader("readAsArrayBuffer", fileObjectToRead, true);
+    };
+
     // readAsDataUrl : Value -> Task error String
     var readAsDataUrl = function(fileObjectToRead){
         return useReader("readAsDataURL", fileObjectToRead);
@@ -68,10 +78,11 @@ var _user$project$Native_FileReader = function() {
             _1: blob
         };
     };
-    
+
     return {
         readAsTextFile : readAsTextFile,
         readAsArrayBuffer : readAsArrayBuffer,
+        readAsBase64 : readAsBase64,
         readAsDataUrl: readAsDataUrl,
         filePart: F2(filePart),
         rawBody: F2(rawBody)
