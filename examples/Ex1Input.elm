@@ -8,13 +8,9 @@ import Json.Decode as Json exposing (Value, andThen)
 import FileReader exposing (..)
 
 
-type alias Files =
-    List NativeFile
-
-
 type alias Model =
     { message : String
-    , selected : Files
+    , selected : List NativeFile
     , contents : List String
     }
 
@@ -29,8 +25,8 @@ init =
 
 type Msg
     = Upload
-    | FilesSelect Files
-    | FilesSelectUpload Files
+    | FilesSelect (List NativeFile)
+    | FilesSelectUpload (List NativeFile)
     | Submit
     | FileData (Result Error String)
 

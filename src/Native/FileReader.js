@@ -1,5 +1,7 @@
-var _simonh1000$file_reader$Native_FileReader = function() {
+// To use the examples, change the comments on the next two lines
+
 // var _user$project$Native_FileReader = function() {
+var _simonh1000$file_reader$Native_FileReader = function() {
 
     var scheduler = _elm_lang$core$Native_Scheduler;
 

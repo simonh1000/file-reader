@@ -179,6 +179,13 @@ type alias NativeFile =
     }
 
 
+{-| An event handler for a `input [ type_ "file" ] []` form element
+-}
+onFileChange : (List NativeFile -> msg) -> Attribute msg
+onFileChange msg =
+    on "change" (Json.map msg parseSelectedFiles)
+
+
 {-| Parse change event from an HTML input element with 'type="file"'.
 Returns a list of files.
 
