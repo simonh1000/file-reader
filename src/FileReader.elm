@@ -46,6 +46,11 @@ together with a set of examples.
 
 @docs parseSelectedFiles, parseDroppedFiles
 
+
+# Helpers: Html event handlers
+
+@docs onFileChange
+
 -}
 
 import Html exposing (Attribute)
