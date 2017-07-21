@@ -32,6 +32,10 @@ You can just copy the src code into your own source tree. Note in particular tha
 
 If you want to try the examples, you will need to edit src/Native/FileReader.js to replace the comments in the first two lines.
 
+## Changelog
+
+1.5: add `onFileChange` - an event handler for an `<input type="file">`
+
 ## Disclaimer
 
 This project began in the time of 0.16 and was submitted as a library including "native code" to the elm-package manager by [Daniel Bachler](https://github.com/danyx23) and myself. It was never OKed, as was the case with all native code at that time. The native code was subsequently updated by [WangBoxue](https://github.com/WangBoxue) to work with 0.17, and I ensured it worked for 0.18.

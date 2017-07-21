@@ -5,6 +5,7 @@ module FileReader
         , FileContentDataUrl
         , NativeFile
         , Error(..)
+        , onFileChange
         , readAsTextFile
         , readAsArrayBuffer
         , readAsDataUrl
@@ -47,6 +48,8 @@ together with a set of examples.
 
 -}
 
+import Html exposing (Attribute)
+import Html.Events exposing (on)
 import Native.FileReader
 import Http exposing (Part, Body)
 import Task exposing (Task, fail)
@@ -142,9 +145,6 @@ rawBody mimeType nf =
 
 
 {-| Pretty print FileReader errors.
-
-    prettyPrint ReadFail   -- == "File reading error"
-
 -}
 prettyPrint : Error -> String
 prettyPrint err =
@@ -179,23 +179,14 @@ type alias NativeFile =
     }
 
 
-{-| An event handler for a `input [ type_ "file" ] []` form element
+{-| A 'change' event handler for a `input [ type_ "file" ] []` form element
 -}
 onFileChange : (List NativeFile -> msg) -> Attribute msg
 onFileChange msg =
     on "change" (Json.map msg parseSelectedFiles)
 
 
-{-| Parse change event from an HTML input element with 'type="file"'.
-Returns a list of files.
-
-    onchange : (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute
-    onchange address actionCreator =
-        on
-            "change"
-            parseSelectedFiles
-            (\vals -> Signal.message address (actionCreator vals))
-
+{-| JSON Decoder for change event from an HTML input element with 'type="file"'.
 -}
 parseSelectedFiles : Decoder (List NativeFile)
 parseSelectedFiles =
@@ -204,19 +195,9 @@ parseSelectedFiles =
 
 {-| Parse files selected using an HTML drop event.
 Returns a list of files.
-
-    ondrop : (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute
-    ondrop actionCreator address =
-        onWithOptions
-            "drop"
-            { stopPropagation = True, preventDefault = True }
-            parseDroppedFiles
-            (\vals -> Signal.message address (actionCreator vals))
-
 -}
 parseDroppedFiles : Decoder (List NativeFile)
 parseDroppedFiles =
-    --     at [ "dataTransfer", "files" ] (list value)
     fileParser "dataTransfer"
 
 
@@ -229,20 +210,13 @@ parseDroppedFiles =
 isTextFile : FileRef -> Bool
 isTextFile fileRef =
     case Json.decodeValue mtypeDecoder fileRef of
-        Result.Ok mimeVal ->
-            case mimeVal of
-                Just mimeType ->
-                    case mimeType of
-                        MimeType.Text text ->
-                            True
+        Ok (Just (MimeType.Text text)) ->
+            True
 
-                        _ ->
-                            False
+        Ok Nothing ->
+            True
 
-                Nothing ->
-                    True
-
-        Result.Err _ ->
+        _ ->
             False
 
 

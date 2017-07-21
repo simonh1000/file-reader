@@ -68,18 +68,16 @@ view model =
             [ h1 [] [ text "Single file select + Upload separate" ]
             , input
                 [ type_ "file"
-                , onchange FilesSelect
+                , FileReader.onFileChange FilesSelect
                 ]
                 []
-            , button
-                [ onClick Upload ]
-                [ text "Read file" ]
+            , button [ onClick Upload ] [ text "Read file" ]
             ]
         , div []
             [ h1 [] [ text "Multiple files with automatic upload" ]
             , input
                 [ type_ "file"
-                , onchange FilesSelectUpload
+                , FileReader.onFileChange FilesSelectUpload
                 , multiple True
                 ]
                 []
@@ -89,13 +87,11 @@ view model =
             [ h1 [] [ text "Form with submit button" ]
             , input
                 [ type_ "file"
-                , onchange FilesSelect
+                , FileReader.onFileChange FilesSelect
                 , multiple True
                 ]
                 []
-            , button
-                [ type_ "submit" ]
-                [ text "Submit" ]
+            , button [ type_ "submit" ] [ text "Submit" ]
             ]
         , div []
             [ h1 [] [ text "Results" ]
@@ -106,19 +102,13 @@ view model =
         ]
 
 
-divStyles =
-    style [ ( "margin-bottom", "15px" ) ]
-
-
 commaSeperate : List String -> String
 commaSeperate lst =
     List.foldl (++) "" (List.intersperse ", " lst)
 
 
-onchange action =
-    on
-        "change"
-        (Json.map action parseSelectedFiles)
+divStyles =
+    style [ ( "margin-bottom", "15px" ) ]
 
 
 containerStyles =
@@ -144,5 +134,5 @@ main =
         { init = ( init, Cmd.none )
         , update = update
         , view = view
-        , subscriptions = (always Sub.none)
+        , subscriptions = always Sub.none
         }

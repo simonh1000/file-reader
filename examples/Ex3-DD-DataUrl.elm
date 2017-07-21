@@ -10,12 +10,8 @@ import DragDropModel as DragDrop exposing (Msg(Drop), dragDropEventHandlers, Hov
 
 type alias Model =
     { dnDModel : DragDrop.HoverState
-    , imageData :
-        Maybe FileContentDataUrl
-        -- the image data once it has been loaded
-    , imageLoadError :
-        Maybe FileReader.Error
-        -- the Error in case loading failed
+    , imageData : Maybe FileContentDataUrl -- the image data once it has been loaded
+    , imageLoadError : Maybe FileReader.Error -- the Error in case loading failed
     }
 
 
