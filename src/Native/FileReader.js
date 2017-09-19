@@ -31,7 +31,7 @@ var _simonh1000$file_reader$Native_FileReader = function() {
             }
 
             if (reader[method]) {
-                const result = reader[method](fileObjectToRead);
+                var result = reader[method](fileObjectToRead);
                 // prevent memory leak by nullifying fileObjectToRead
                 fileObjectToRead = null;
                 return result;
