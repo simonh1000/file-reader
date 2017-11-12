@@ -62,6 +62,26 @@ import Json.Decode as Json exposing (Decoder, Value)
 import MimeType
 
 
+{-| Helper type for interpreting the Files event value from Input and drag 'n drop.
+The first three elements are useful meta data, while the fourth is the handle
+needed to read the file.
+
+    type alias NativeFile =
+        { name : String
+        , size : Int
+        , mimeType : Maybe MimeType.MimeType
+        , blob : Value
+        }
+
+-}
+type alias NativeFile =
+    { name : String
+    , size : Int
+    , mimeType : Maybe MimeType.MimeType
+    , blob : FileRef
+    }
+
+
 {-| A FileRef (or Blob) is a Elm Json Value.
 -}
 type alias FileRef =
@@ -162,26 +182,6 @@ prettyPrint err =
 
         NotTextFile ->
             "Not a text file"
-
-
-{-| Helper type for interpreting the Files event value from Input and drag 'n drop.
-The first three elements are useful meta data, while the fourth is the handle
-needed to read the file.
-
-    type alias NativeFile =
-        { name : String
-        , size : Int
-        , mimeType : Maybe MimeType.MimeType
-        , blob : Value
-        }
-
--}
-type alias NativeFile =
-    { name : String
-    , size : Int
-    , mimeType : Maybe MimeType.MimeType
-    , blob : FileRef
-    }
 
 
 {-| A 'change' event handler for a `input [ type_ "file" ] []` form element

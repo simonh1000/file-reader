@@ -1,0 +1,22 @@
+body {
+    background-color: #ddd;
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .panel {
+        background-color: whites;
+        padding: 20px;
+        width: 500px;
+    }
+    .drop-zone {
+        border: 3px dashed #444;
+        height: 300px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        &.active {
+            border-color: #dd9999;
+        }
+    }
+}

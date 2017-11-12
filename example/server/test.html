@@ -39,20 +39,20 @@
 
     submit.addEventListener('click', evt => {
         // console.log(evt);
-        let file = files[0]; 
+        let file = files[0];
         var formdata = new FormData()
         // formdata.append('test', 'file');
-        formdata.append('simtest', file);
- 
+        formdata.append('upload', file);
+
             // "Content-Type": "multipart/form-data",
         var myHeaders = new Headers({
         });
 
-        var myInit = { 
+        var myInit = {
             method: 'POST',
             body: formdata
         };
- 
+
         fetch('http://localhost:5000/upload', myInit)
         .then(function(response) {
             if (response.status >= 400) {

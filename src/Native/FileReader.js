@@ -1,4 +1,4 @@
-// To use the examples, change the comments on the next two lines
+// To use the examples, swap the commenting on the next two lines
 
 // var _user$project$Native_FileReader = function() {
 var _simonh1000$file_reader$Native_FileReader = function() {
