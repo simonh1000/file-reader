@@ -1,9 +1,10 @@
+const fs = require('fs');
+const path = require('path');
+
 var express = require('express')
 var multer = require('multer')
-// var upload = multer({ dest: 'uploads/' })
-var upload = multer();
+var upload = multer({ dest: 'uploads/' });
 var cors = require('cors');
-
 
 var app = express();
 app.use(cors());
@@ -17,10 +18,11 @@ app.get('/test', function (req, res) {
   res.sendFile(__dirname+'/test.html');
 })
 
-app.post('/upload', upload.single('simtest'), function (req, res, next) {
+app.post('/upload', upload.single('upload'), function (req, res, next) {
   console.log(req.file);
   console.log(req.body);
-  res.send({"message": "received"});
+  // fs.writeFileSync(req.body, path.join(__dirname, 'uploads', req.file.originalname));
+  res.send({"message": req.file.filename});
 })
 
 app.listen(5000, function () {
