@@ -1,5 +1,12 @@
+<<<<<<< Updated upstream
 var _user$project$Native_FileReader = function() {
 // var _simonh1000$file_reader$Native_FileReader = function() {
+=======
+// To use the examples, swap the commenting on the next two lines
+
+// var _user$project$Native_FileReader = function() {
+var _simonh1000$file_reader$Native_FileReader = function() {
+>>>>>>> Stashed changes
 
     var scheduler = _elm_lang$core$Native_Scheduler;
 

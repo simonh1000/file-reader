@@ -10,7 +10,11 @@ FileReader has three main methods (see [MDN](https://developer.mozilla.org/en/do
 
 The module also provides helper Elm decoders for `change` events on `<Input type="file">` and `drop` events, together with a set of examples.
 
+<<<<<<< Updated upstream
 **New for Elm 0.18:** An additional native code function has been added to enable multipart form uploads of binary data - see http://simonh1000.github.io/2016/12/elm-s3-uploads/
+=======
+**New for Elm 0.18:** An additional native code function has been added to enable multi-part form uploads of binary data - see http://simonh1000.github.io/2016/12/elm-s3-uploads/ for an example of its usage.
+>>>>>>> Stashed changes
 
 ## Installation
 
@@ -32,4 +36,8 @@ This project began in the time of 0.16 and was submitted as a library including 
 
 In the meantime, note that the official guidance would be to use a port rather than a native library such as this. However, you will see that the native code covers the absolute minimum to expose the APIs so I believe this will not jeopardise the stability of your Elm apps.
 
+<<<<<<< Updated upstream
 Simon Hampton, [Daniel Bachler](https://github.com/danyx23)
+=======
+In theory Evan plans to make all browser web APIs available to Elm users and when that includes FileReader, this library will remove the native code. The official guidance therefore is to use a port rather than the native code in this library, but you can readily verify that the native code here covers the absolute minimum to expose the APIs, so I believe this will not jeopardise the stability of your Elm apps.
+>>>>>>> Stashed changes
