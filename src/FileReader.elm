@@ -5,6 +5,7 @@ module FileReader
         , FileContentDataUrl
         , NativeFile
         , Error(..)
+        , onFileChange
         , readAsTextFile
         , readAsArrayBuffer
         , readAsDataUrl
@@ -12,6 +13,7 @@ module FileReader
         , parseSelectedFiles
         , parseDroppedFiles
         , filePart
+        , rawBody
         )
 
 {-| Elm bindings for the main [HTML5 FileReader APIs](https://developer.mozilla.org/en/docs/Web/API/FileReader):
@@ -24,62 +26,66 @@ The module also provides helper Json Decoders for the files values on
 `<Input type="file">` `change` events, and on `drop` events,
 together with a set of examples.
 
+
 # API functions
+
 @docs readAsTextFile, readAsArrayBuffer, readAsDataUrl
 
+
 # Multi-part support
-@docs filePart
+
+@docs filePart, rawBody
+
 
 # Helper aliases
+
 @docs NativeFile, FileRef, FileContentArrayBuffer, FileContentDataUrl, Error, prettyPrint
 
+
 # Helper Json Decoders
+
 @docs parseSelectedFiles, parseDroppedFiles
+
+
+# Helpers: Html event handlers
+
+@docs onFileChange
+
 -}
 
+import Html exposing (Attribute)
+import Html.Events exposing (on)
 import Native.FileReader
 import Http exposing (Part, Body)
 import Task exposing (Task, fail)
-import Json.Decode
-    exposing
-        ( Decoder
-        , decodeValue
-        , field
-        , at
-        , map
-        , map4
-        , string
-        , int
-        , value
-        , maybe
-        , keyValuePairs
-        )
+import Json.Decode as Json exposing (Decoder, Value)
 import MimeType
 
 
 {-| A FileRef (or Blob) is a Elm Json Value.
 -}
 type alias FileRef =
-    Json.Decode.Value
+    Value
 
 
 {-| An ArrayBuffer is a Elm Json Value.
 -}
 type alias FileContentArrayBuffer =
-    Json.Decode.Value
+    Value
 
 
 {-| A DataUrl is an Elm Json Value.
 -}
 type alias FileContentDataUrl =
-    Json.Decode.Value
+    Value
 
 
 {-| FileReader can fail in the following cases:
 
- - the File reference / blob passed in was not valid
- - an native error occurs during file reading
- - readAsTextFile is passed a FileRef that does not have a text format (unrecognised formats are read)
+  - the File reference / blob passed in was not valid
+  - an native error occurs during file reading
+  - readAsTextFile is passed a FileRef that does not have a text format (unrecognised formats are read)
+
 -}
 type Error
     = NoValidBlob
@@ -92,6 +98,7 @@ format, returns a task that reads the file as a text file. The Success value is
 represented as a String to Elm.
 
     readAsTextFile ref
+
 -}
 readAsTextFile : FileRef -> Task Error String
 readAsTextFile fileRef =
@@ -107,6 +114,7 @@ The ArrayBuffer value returned in the Success case of the Task will
 be represented as a Json.Value to Elm.
 
     readAsArrayBuffer ref
+
 -}
 readAsArrayBuffer : FileRef -> Task Error FileContentArrayBuffer
 readAsArrayBuffer fileRef =
@@ -120,6 +128,7 @@ The DataURL value returned in the Success case of the Task will
 be represented as a Json.Value to Elm.
 
     readAsDataUrl ref
+
 -}
 readAsDataUrl : FileRef -> Task Error FileContentDataUrl
 readAsDataUrl fileRef =
@@ -133,9 +142,14 @@ filePart name nf =
     Native.FileReader.filePart name nf.blob
 
 
-{-| Pretty print FileReader errors.
+{-| Creates an Http.Body from a NativeFile, to support uploading of binary files without using multipart.
+-}
+rawBody : String -> NativeFile -> Body
+rawBody mimeType nf =
+    Native.FileReader.rawBody mimeType nf.blob
 
-    prettyPrint ReadFail   -- == "File reading error"
+
+{-| Pretty print FileReader errors.
 -}
 prettyPrint : Error -> String
 prettyPrint err =
@@ -160,6 +174,7 @@ needed to read the file.
         , mimeType : Maybe MimeType.MimeType
         , blob : Value
         }
+
 -}
 type alias NativeFile =
     { name : String
@@ -169,15 +184,14 @@ type alias NativeFile =
     }
 
 
-{-| Parse change event from an HTML input element with 'type="file"'.
-Returns a list of files.
+{-| A 'change' event handler for a `input [ type_ "file" ] []` form element
+-}
+onFileChange : (List NativeFile -> msg) -> Attribute msg
+onFileChange msg =
+    on "change" (Json.map msg parseSelectedFiles)
 
-    onchange : (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute
-    onchange address actionCreator =
-        on
-            "change"
-            parseSelectedFiles
-            (\vals -> Signal.message address (actionCreator vals))
+
+{-| JSON Decoder for change event from an HTML input element with 'type="file"'.
 -}
 parseSelectedFiles : Decoder (List NativeFile)
 parseSelectedFiles =
@@ -186,19 +200,9 @@ parseSelectedFiles =
 
 {-| Parse files selected using an HTML drop event.
 Returns a list of files.
-
-    ondrop : (List NativeFile -> Action) -> Signal.Address Action -> Html.Attribute
-    ondrop actionCreator address =
-        onWithOptions
-            "drop"
-            {stopPropagation = True, preventDefault = True}
-            parseDroppedFiles
-            (\vals -> Signal.message address (actionCreator vals))
-
 -}
 parseDroppedFiles : Decoder (List NativeFile)
 parseDroppedFiles =
-    --     at [ "dataTransfer", "files" ] (list value)
     fileParser "dataTransfer"
 
 
@@ -210,21 +214,14 @@ parseDroppedFiles =
 -}
 isTextFile : FileRef -> Bool
 isTextFile fileRef =
-    case decodeValue mtypeDecoder fileRef of
-        Result.Ok mimeVal ->
-            case mimeVal of
-                Just mimeType ->
-                    case mimeType of
-                        MimeType.Text text ->
-                            True
+    case Json.decodeValue mtypeDecoder fileRef of
+        Ok (Just (MimeType.Text text)) ->
+            True
 
-                        _ ->
-                            False
+        Ok Nothing ->
+            True
 
-                Nothing ->
-                    True
-
-        Result.Err _ ->
+        _ ->
             False
 
 
@@ -241,26 +238,40 @@ isTextFile fileRef =
 
 fileParser : String -> Decoder (List NativeFile)
 fileParser fieldName =
-    at
-        [ fieldName, "files" ]
-    <|
-        map (List.filterMap Tuple.second) (keyValuePairs <| maybe nativeFileDecoder)
+    Json.field fieldName <|
+        Json.field "files" <|
+            fileListDecoder nativeFileDecoder
+
+
+{-| Apply a decoder to each file in the FileList, in order.
+-}
+fileListDecoder : Decoder a -> Decoder (List a)
+fileListDecoder decoder =
+    let
+        decodeFileValues indexes =
+            indexes
+                |> List.map (\index -> Json.field (toString index) decoder)
+                |> List.foldr (Json.map2 (::)) (Json.succeed [])
+    in
+        Json.field "length" Json.int
+            |> Json.map (\i -> List.range 0 (i - 1))
+            |> Json.andThen decodeFileValues
 
 
 {-| mime type: parsed as string and then converted to a MimeType
 -}
 mtypeDecoder : Decoder (Maybe MimeType.MimeType)
 mtypeDecoder =
-    map MimeType.parseMimeType (field "type" string)
+    Json.map MimeType.parseMimeType (Json.field "type" Json.string)
 
 
 {-| blob: the whole JS File object as a Json.Value so we can pass
-   it to a library that reads the content with a native FileReader
+it to a library that reads the content with a native FileReader
 -}
 nativeFileDecoder : Decoder NativeFile
 nativeFileDecoder =
-    map4 NativeFile
-        (field "name" string)
-        (field "size" int)
+    Json.map4 NativeFile
+        (Json.field "name" Json.string)
+        (Json.field "size" Json.int)
         mtypeDecoder
-        value
+        Json.value

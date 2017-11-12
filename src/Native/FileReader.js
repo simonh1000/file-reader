@@ -1,12 +1,7 @@
-<<<<<<< Updated upstream
-var _user$project$Native_FileReader = function() {
-// var _simonh1000$file_reader$Native_FileReader = function() {
-=======
 // To use the examples, swap the commenting on the next two lines
 
 // var _user$project$Native_FileReader = function() {
 var _simonh1000$file_reader$Native_FileReader = function() {
->>>>>>> Stashed changes
 
     var scheduler = _elm_lang$core$Native_Scheduler;
 
@@ -37,9 +32,9 @@ var _simonh1000$file_reader$Native_FileReader = function() {
 
             if (reader[method]) {
                 const result = reader[method](fileObjectToRead);
+                // prevent memory leak by nullifying fileObjectToRead
                 fileObjectToRead = null;
                 return result;
-                // return reader[method](fileObjectToRead);
             } else {
                 return callback(scheduler.fail({ctor : 'ReadFail'}));
             }
@@ -68,10 +63,19 @@ var _simonh1000$file_reader$Native_FileReader = function() {
         }
     };
 
+    var rawBody = function (mimeType, blob) {
+        return {
+            ctor: "StringBody",
+            _0: mimeType,
+            _1: blob
+        };
+    };
+
     return {
         readAsTextFile : readAsTextFile,
         readAsArrayBuffer : readAsArrayBuffer,
         readAsDataUrl: readAsDataUrl,
-        filePart: F2(filePart)
+        filePart: F2(filePart),
+        rawBody: F2(rawBody)
     };
 }();
