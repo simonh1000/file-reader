@@ -1,7 +1,13 @@
-'use strict';
+"use strict";
 
-require('bootstrap-loader');
 require("./styles.scss");
 
-var Elm = require('./Main');
-var app = Elm.Main.fullscreen();
+import {dispatcher} from './FileReader'
+
+const { Elm } = require("./Main");
+var app = Elm.Main.init({ flags: 6 });
+
+app.ports.toJs.subscribe(data => {
+    // debugger;
+    dispatcher(data, app.ports.fromJs.send);
+});

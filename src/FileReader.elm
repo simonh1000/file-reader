@@ -1,20 +1,8 @@
-module FileReader
-    exposing
-        ( FileRef
-        , FileContentArrayBuffer
-        , FileContentDataUrl
-        , NativeFile
-        , Error(..)
-        , onFileChange
-        , readAsTextFile
-        , readAsArrayBuffer
-        , readAsDataUrl
-        , prettyPrint
-        , parseSelectedFiles
-        , parseDroppedFiles
-        , filePart
-        , rawBody
-        )
+module FileReader exposing
+    ( NativeFile, FileRef, FileContentArrayBuffer, FileContentDataUrl, Error(..), prettyPrint
+    , parseSelectedFiles, parseDroppedFiles
+    , onFileChange
+    )
 
 {-| Elm bindings for the main [HTML5 FileReader APIs](https://developer.mozilla.org/en/docs/Web/API/FileReader):
 
@@ -55,11 +43,10 @@ together with a set of examples.
 
 import Html exposing (Attribute)
 import Html.Events exposing (on)
-import Native.FileReader
-import Http exposing (Part, Body)
-import Task exposing (Task, fail)
-import Json.Decode as Json exposing (Decoder, Value)
+import Http exposing (Body, Part)
+import Json.Decode as Decode exposing (Decoder, Value)
 import MimeType
+import Task exposing (Task, fail)
 
 
 {-| Helper type for interpreting the Files event value from Input and drag 'n drop.
@@ -113,60 +100,63 @@ type Error
     | NotTextFile
 
 
-{-| Takes a "File" or "Blob" JS object as a Json.Value. If the File is a text
-format, returns a task that reads the file as a text file. The Success value is
-represented as a String to Elm.
 
-    readAsTextFile ref
-
--}
-readAsTextFile : FileRef -> Task Error String
-readAsTextFile fileRef =
-    if isTextFile fileRef then
-        Native.FileReader.readAsTextFile fileRef
-    else
-        fail NotTextFile
-
-
-{-| Takes a "File" or "Blob" JS object as a Json.Value
-and starts a task to read the contents as an ArrayBuffer.
-The ArrayBuffer value returned in the Success case of the Task will
-be represented as a Json.Value to Elm.
-
-    readAsArrayBuffer ref
-
--}
-readAsArrayBuffer : FileRef -> Task Error FileContentArrayBuffer
-readAsArrayBuffer fileRef =
-    Native.FileReader.readAsArrayBuffer fileRef
-
-
-{-| Takes a "File" or "Blob" JS object as a Json.Value
-and starts a task to read the contents as an DataURL (so it can
-be assigned to the src property of an img e.g.).
-The DataURL value returned in the Success case of the Task will
-be represented as a Json.Value to Elm.
-
-    readAsDataUrl ref
-
--}
-readAsDataUrl : FileRef -> Task Error FileContentDataUrl
-readAsDataUrl fileRef =
-    Native.FileReader.readAsDataUrl fileRef
-
-
-{-| Creates an Http.Part from a NativeFile, to support uploading of binary files using multipart.
--}
-filePart : String -> NativeFile -> Part
-filePart name nf =
-    Native.FileReader.filePart name nf.blob
-
-
-{-| Creates an Http.Body from a NativeFile, to support uploading of binary files without using multipart.
--}
-rawBody : String -> NativeFile -> Body
-rawBody mimeType nf =
-    Native.FileReader.rawBody mimeType nf.blob
+--
+-- {-| Takes a "File" or "Blob" JS object as a Decode.Value. If the File is a text
+-- format, returns a task that reads the file as a text file. The Success value is
+-- represented as a String to Elm.
+--
+--     readAsTextFile ref
+--
+-- -}
+-- readAsTextFile : FileRef -> Task Error String
+-- readAsTextFile fileRef =
+--     if isTextFile fileRef then
+--         Native.FileReader.readAsTextFile fileRef
+--     else
+--         fail NotTextFile
+--
+--
+-- {-| Takes a "File" or "Blob" JS object as a Decode.Value
+-- and starts a task to read the contents as an ArrayBuffer.
+-- The ArrayBuffer value returned in the Success case of the Task will
+-- be represented as a Decode.Value to Elm.
+--
+--     readAsArrayBuffer ref
+--
+-- -}
+-- readAsArrayBuffer : FileRef -> Task Error FileContentArrayBuffer
+-- readAsArrayBuffer fileRef =
+--     Native.FileReader.readAsArrayBuffer fileRef
+--
+--
+-- {-| Takes a "File" or "Blob" JS object as a Decode.Value
+-- and starts a task to read the contents as an DataURL (so it can
+-- be assigned to the src property of an img e.g.).
+-- The DataURL value returned in the Success case of the Task will
+-- be represented as a Decode.Value to Elm.
+--
+--     readAsDataUrl ref
+--
+-- -}
+-- readAsDataUrl : FileRef -> Task Error FileContentDataUrl
+-- readAsDataUrl fileRef =
+--     Native.FileReader.readAsDataUrl fileRef
+--
+--
+-- {-| Creates an Http.Part from a NativeFile, to support uploading of binary files using multipart.
+-- -}
+-- filePart : String -> NativeFile -> Part
+-- filePart name nf =
+--     Native.FileReader.filePart name nf.blob
+--
+--
+-- {-| Creates an Http.Body from a NativeFile, to support uploading of binary files without using multipart.
+-- -}
+-- rawBody : String -> NativeFile -> Body
+-- rawBody mimeType nf =
+--     Native.FileReader.rawBody mimeType nf.blob
+--
 
 
 {-| Pretty print FileReader errors.
@@ -185,10 +175,21 @@ prettyPrint err =
 
 
 {-| A 'change' event handler for a `input [ type_ "file" ] []` form element
+NOTE: decoding a string "0" is deliberate!
 -}
-onFileChange : (List NativeFile -> msg) -> Attribute msg
+onFileChange : (NativeFile -> msg) -> Attribute msg
 onFileChange msg =
-    on "change" (Json.map msg parseSelectedFiles)
+    nativeFileDecoder
+        |> Decode.at [ "target", "files", "0" ]
+        |> Decode.map msg
+        |> on "change"
+
+
+{-| A 'change' event handler for a `input [ type_ "file" ] []` form element
+-}
+onFileChangeMulti : (List NativeFile -> msg) -> Attribute msg
+onFileChangeMulti msg =
+    on "change" (Decode.map msg parseSelectedFiles)
 
 
 {-| JSON Decoder for change event from an HTML input element with 'type="file"'.
@@ -214,7 +215,7 @@ parseDroppedFiles =
 -}
 isTextFile : FileRef -> Bool
 isTextFile fileRef =
-    case Json.decodeValue mtypeDecoder fileRef of
+    case Decode.decodeValue mtypeDecoder fileRef of
         Ok (Just (MimeType.Text text)) ->
             True
 
@@ -232,15 +233,14 @@ isTextFile fileRef =
        { 1 : file1..., 2: file2..., 3 : ... }
 
    It also inherits other properties that we need to ignore during parsing.
-   fileParser achieves this by using Json.maybe and then filtering out Nothing(s)
+   fileParser achieves this by using Decode.maybe and then filtering out Nothing(s)
 -}
 
 
 fileParser : String -> Decoder (List NativeFile)
 fileParser fieldName =
-    Json.field fieldName <|
-        Json.field "files" <|
-            fileListDecoder nativeFileDecoder
+    Decode.at [ fieldName, "files" ] <|
+        fileListDecoder nativeFileDecoder
 
 
 {-| Apply a decoder to each file in the FileList, in order.
@@ -250,28 +250,28 @@ fileListDecoder decoder =
     let
         decodeFileValues indexes =
             indexes
-                |> List.map (\index -> Json.field (toString index) decoder)
-                |> List.foldr (Json.map2 (::)) (Json.succeed [])
+                |> List.map (\index -> Decode.field (String.fromInt index) decoder)
+                |> List.foldr (Decode.map2 (::)) (Decode.succeed [])
     in
-        Json.field "length" Json.int
-            |> Json.map (\i -> List.range 0 (i - 1))
-            |> Json.andThen decodeFileValues
+    Decode.field "length" Decode.int
+        |> Decode.map (\i -> List.range 0 (i - 1))
+        |> Decode.andThen decodeFileValues
 
 
 {-| mime type: parsed as string and then converted to a MimeType
 -}
 mtypeDecoder : Decoder (Maybe MimeType.MimeType)
 mtypeDecoder =
-    Json.map MimeType.parseMimeType (Json.field "type" Json.string)
+    Decode.map MimeType.parseMimeType (Decode.field "type" Decode.string)
 
 
-{-| blob: the whole JS File object as a Json.Value so we can pass
+{-| blob: the whole JS File object as a Decode.Value so we can pass
 it to a library that reads the content with a native FileReader
 -}
 nativeFileDecoder : Decoder NativeFile
 nativeFileDecoder =
-    Json.map4 NativeFile
-        (Json.field "name" Json.string)
-        (Json.field "size" Json.int)
+    Decode.map4 NativeFile
+        (Decode.field "name" Decode.string)
+        (Decode.field "size" Decode.int)
         mtypeDecoder
-        Json.value
+        Decode.value
