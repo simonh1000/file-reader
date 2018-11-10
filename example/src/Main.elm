@@ -37,10 +37,10 @@ type Msg
       -- Drag n Drop
     | OnDragEnter Int
     | OnDrop (List NativeFile)
-    | StartUpload
-    | NoOp
-    | PostResult (Result Http.Error Value)
-    | LoadSelectedFiles
+      -- Upload
+    | StartUpload -- "upload" button
+    | OnPostResult (Result Http.Error Value)
+    | NoOp -- used for "dragover" event
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -63,32 +63,22 @@ update message model =
         OnDragEnter inc ->
             ( { model | dragHovering = model.dragHovering + inc }, Cmd.none )
 
-        OnDrop file ->
-            case file of
+        OnDrop nfs ->
+            case nfs of
                 -- Only handling case of a single file
-                [ f ] ->
-                    ( { model | file = Just f, dragHovering = 0 }, getFileContents f )
+                [ nf ] ->
+                    ( { model | file = Just nf, dragHovering = 0 }, getFileContents nf )
 
                 _ ->
-                    ( { model | dragHovering = 0 }, Cmd.none )
+                    ( { model | dragHovering = 0, content = "Only drop one file" }, Cmd.none )
 
-        -- OnFileContent res ->
-        --     case res of
-        --         Ok content ->
-        --             ( { model | content = content }, Cmd.none )
-        --
-        --         Err err ->
-        --             Debug.todo (Debug.toString err)
         StartUpload ->
             ( model, model.file |> Maybe.map sendFileToServer |> Maybe.withDefault Cmd.none )
 
-        PostResult res ->
-            case Debug.log "PostResult" res of
+        OnPostResult res ->
+            case Debug.log "OnPostResult" res of
                 _ ->
                     ( model, Cmd.none )
-
-        LoadSelectedFiles ->
-            ( model, toJs { tag = "readAsTextFile", payload = Encode.null } )
 
         _ ->
             ( model, Cmd.none )
@@ -117,7 +107,7 @@ sendFileToServer nf =
     --             ]
     -- in
     -- Http.post "http://localhost:5000/upload" body Json.value
-    --     |> Http.send PostResult
+    --     |> Http.send OnPostResult
     Cmd.none
 
 
@@ -129,7 +119,7 @@ view : Model -> Html Msg
 view model =
     let
         dzAttrs_ =
-            DZ.dzAttrs (OnDragEnter 1) (OnDragEnter -1) NoOp NoOp
+            DZ.dzAttrs (OnDragEnter 1) (OnDragEnter -1) NoOp OnDrop
 
         dzClass =
             if model.dragHovering > 0 then

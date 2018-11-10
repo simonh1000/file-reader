@@ -1,39 +1,17 @@
-module FileReader.FileDrop exposing (draggableAttrs, dzAttrs, onDragEnd, onDragEnter, onDragLeave, onDragOver, onDragStart, onDrop, onPreventDefault, onSkipMsg, onStopAll, onStopPropagation)
+module FileReader.FileDrop exposing (dzAttrs, onDragEnter, onDragLeave, onDragOver, onDrop, onPreventDefault, onStopAll, onStopPropagation)
 
 import Dict exposing (Dict)
+import FileReader exposing (NativeFile)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (custom, on, preventDefaultOn, stopPropagationOn)
-import Json.Decode as Jdec
+import Json.Decode as Decode
 import List as L
 
 
-{-| attributes for something that is dragged
-dragEnd is generally NoOp
+{-| dragOverMsg should be a NoOp
 -}
-draggableAttrs : msg -> msg -> List (Attribute msg)
-draggableAttrs dragStart dragEnd =
-    [ draggable "true"
-    , onDragStart dragStart
-    , onDragEnd dragEnd
-    ]
-
-
-onDragStart : msg -> Attribute msg
-onDragStart =
-    onStopPropagation "dragstart"
-
-
-onDragEnd : msg -> Attribute msg
-onDragEnd msgCreator =
-    onStopPropagation "dragend" msgCreator
-
-
-
---
-
-
-dzAttrs : msg -> msg -> msg -> msg -> List (Attribute msg)
+dzAttrs : msg -> msg -> msg -> (List NativeFile -> msg) -> List (Attribute msg)
 dzAttrs dragEnter dragLeave dragOverMsg dropMsg =
     [ onDragEnter dragEnter
     , onDragLeave dragLeave
@@ -52,20 +30,18 @@ onDragLeave msgCreator =
     onStopAll "dragleave" msgCreator
 
 
+{-| Not used as such, but we need to handle it for some reasom
+-}
 onDragOver : msg -> Attribute msg
 onDragOver msg =
-    -- onStopAll "dragover" msg
-    onSkipMsg "dragover" msg
+    onPreventDefault "dragover" msg
 
 
-onDrop : msg -> Attribute msg
+onDrop : (List NativeFile -> msg) -> Attribute msg
 onDrop msgCreator =
-    onPreventDefault "drop" msgCreator
-
-
-onSkipMsg : String -> msg -> Attribute msg
-onSkipMsg evt msg =
-    onPreventDefault evt msg
+    FileReader.parseDroppedFiles
+        |> Decode.map (\nfs -> ( msgCreator nfs, True ))
+        |> preventDefaultOn "drop"
 
 
 
@@ -74,18 +50,18 @@ onSkipMsg evt msg =
 
 onStopPropagation : String -> a -> Attribute a
 onStopPropagation evt msgCreator =
-    stopPropagationOn evt <| Jdec.succeed ( msgCreator, True )
+    stopPropagationOn evt <| Decode.succeed ( msgCreator, True )
 
 
 onPreventDefault : String -> a -> Attribute a
 onPreventDefault evt msgCreator =
-    preventDefaultOn evt <| Jdec.succeed ( msgCreator, True )
+    preventDefaultOn evt <| Decode.succeed ( msgCreator, True )
 
 
 onStopAll : String -> a -> Attribute a
 onStopAll evt msgCreator =
     custom evt <|
-        Jdec.succeed
+        Decode.succeed
             { message = msgCreator
             , stopPropagation = True
             , preventDefault = True
