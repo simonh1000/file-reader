@@ -73,7 +73,11 @@ update message model =
                     ( { model | dragHovering = 0, content = "Only drop one file" }, Cmd.none )
 
         StartUpload ->
-            ( model, model.file |> Maybe.map sendFileToServer |> Maybe.withDefault Cmd.none )
+            ( model
+            , model.file
+                |> Maybe.map (\nf -> sendFileToServer { nf | blob = Encode.string model.content })
+                |> Maybe.withDefault Cmd.none
+            )
 
         OnPostResult res ->
             case Debug.log "OnPostResult" res of
@@ -98,17 +102,17 @@ getFileContents nf =
 
 sendFileToServer : NativeFile -> Cmd Msg
 sendFileToServer nf =
-    -- let
-    --     body =
-    --         Http.multipartBody
-    --             [ Http.stringPart "part1" nf.name
-    --
-    --             , FileReasder.filePart "upload" nf
-    --             ]
-    -- in
-    -- Http.post "http://localhost:5000/upload" body Json.value
-    --     |> Http.send OnPostResult
-    Cmd.none
+    let
+        body =
+            Http.multipartBody
+                [ Http.stringPart "part1" nf.name
+
+                -- Next line needs to be able to take blob, but it can't!
+                , Http.stringPart "upload" nf
+                ]
+    in
+    Http.post "http://localhost:5000/upload" body Decode.value
+        |> Http.send OnPostResult
 
 
 
