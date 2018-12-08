@@ -1,3 +1,7 @@
+# 0.19 
+
+With the arrival of 0.19, the Javascript code in this package is unusable. I believe that some of the functionality in https://github.com/elm/file may provide an approved alternative, but I have not had cause to access files in 0.19 yet. So this repo is effectively archived pending the emergence of issues that can be solved in the current context.
+
 # Read files into Elm apps
 
 There are two basic ways to read files from the host operating system into the browser (either to view directly or to upload to a server):
